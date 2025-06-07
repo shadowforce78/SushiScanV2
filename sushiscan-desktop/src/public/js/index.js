@@ -1031,39 +1031,57 @@ async function loadChapterPages(imageUrls) {
         `;
 
         const image = pageDiv.querySelector('.chapter-page-image');
-        const loader = pageDiv.querySelector('.chapter-page-loader');
-
-        // Function to try loading image with fallback URLs
+        const loader = pageDiv.querySelector('.chapter-page-loader');        // Function to try loading image with fallback URLs
         const tryLoadImage = async (urls, urlIndex = 0) => {
             if (urlIndex >= urls.length) {
                 // All URLs failed
                 console.error('All fallback URLs failed for image:', imageUrl);
                 loader.innerHTML = '❌';
                 loader.style.color = 'var(--accent-red)';
-                loader.title = 'Échec du chargement de l\'image';
+                loader.title = 'Échec du chargement de l\'image - Toutes les méthodes ont échoué';
                 loadedPages++;
                 updateProgress();
                 return;
             }
 
             const currentUrl = urls[urlIndex];
+            
+            // Add visual indicator if using fallback URL
+            if (urlIndex > 0) {
+                loader.classList.add('retrying');
+                loader.title = `Tentative ${urlIndex + 1}/${urls.length} - Utilisation d'une méthode alternative`;
+                pageDiv.setAttribute('data-fallback-used', urlIndex);
+            }
+            
             console.log(`Trying URL ${urlIndex + 1}/${urls.length} for page ${index + 1}:`, currentUrl);
 
             image.onload = () => {
-                console.log(`Successfully loaded page ${index + 1} with URL ${urlIndex + 1}`);
+                console.log(`Successfully loaded page ${index + 1} with URL ${urlIndex + 1}/${urls.length}`);
                 loader.style.display = 'none';
+                loader.classList.remove('retrying');
                 image.style.opacity = '1';
+                
+                // Add success indicator if fallback was used
+                if (urlIndex > 0) {
+                    console.info(`Page ${index + 1} loaded using fallback method ${urlIndex + 1}`);
+                }
+                
                 loadedPages++;
                 updateProgress();
             };
 
             image.onerror = () => {
-                console.warn(`Failed to load page ${index + 1} with URL ${urlIndex + 1}:`, currentUrl);
-                // Try next fallback URL
-                setTimeout(() => tryLoadImage(urls, urlIndex + 1), 500);
+                console.warn(`Failed to load page ${index + 1} with URL ${urlIndex + 1}/${urls.length}:`, currentUrl);
+                loader.classList.remove('retrying');
+                
+                // Try next fallback URL after a short delay
+                setTimeout(() => tryLoadImage(urls, urlIndex + 1), 1000);
             };
 
-            image.src = currentUrl;
+            // Set source with a small delay to ensure proper error handling
+            setTimeout(() => {
+                image.src = currentUrl;
+            }, 100);
         };
 
         const updateProgress = () => {
