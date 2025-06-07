@@ -640,17 +640,13 @@ function showMangaDetailsLoading() {
 function displayMangaDetails(manga) {
     const mangaDetails = document.getElementById('mangaDetails');
     if (!mangaDetails) return;
-    
-    // Format the updated date
+      // Format the updated date
     const updatedDate = manga.updated_at ? 
         new Date(manga.updated_at).toLocaleDateString('fr-FR', {
             year: 'numeric',
             month: 'long',
             day: 'numeric'
         }) : 'Date inconnue';
-    
-    // Calculate popularity percentage (assuming max is 10)
-    const popularityPercent = Math.min((manga.popularity || 0) * 10, 100);
     
     mangaDetails.innerHTML = `
         <div class="manga-details-header">
@@ -668,17 +664,8 @@ function displayMangaDetails(manga) {
                 <div class="manga-image-loader">⏳</div>
                 <img class="manga-main-image" alt="${manga.title || 'Manga cover'}" style="opacity: 0;">
             </div>
-            
-            <div class="manga-info-section">
+              <div class="manga-info-section">
                 <div class="manga-meta-grid">
-                    <div class="meta-item">
-                        <div class="meta-label">Popularité</div>
-                        <div class="meta-value">${manga.popularity || 0}/10</div>
-                        <div class="popularity-bar">
-                            <div class="popularity-fill" style="width: ${popularityPercent}%"></div>
-                        </div>
-                    </div>
-                    
                     <div class="meta-item">
                         <div class="meta-label">Chapitres</div>
                         <div class="meta-value">${manga.total_chapters || 'Non spécifié'}</div>
