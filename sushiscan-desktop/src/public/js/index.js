@@ -17,40 +17,43 @@ function closeWindow() {
     }
 }
 
-function getScansHomepage() {
+async function getScansHomepage() {
     const API = 'https://api.saumondeluxe.com/scans/homepage';
     
     // Show loading state
     showLoadingState();
     
-    fetch(API)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log('Scans Homepage Data:', data);
-            
-            // Clear loading state
-            clearLoadingState();
-            
-            // Create cards for each category
-            if (data.trending) {
-                createCardsForCategory('trendingList', data.trending);
-            }
-            if (data.popular) {
-                createCardsForCategory('popularList', data.popular);
-            }
-            if (data.recommended) {
-                createCardsForCategory('recommendedList', data.recommended);
-            }
-        })
-        .catch(error => {
-            console.error('Error fetching scans homepage:', error);
-            showErrorState(error.message);
-        });
+    try {
+        const response = await fetch(API);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Scans Homepage Data:', data);
+        
+        // Clear loading state
+        clearLoadingState();
+        
+        // Create cards for each category asynchronously
+        const promises = [];
+        if (data.trending) {
+            promises.push(createCardsForCategory('trendingList', data.trending));
+        }
+        if (data.popular) {
+            promises.push(createCardsForCategory('popularList', data.popular));
+        }
+        if (data.recommended) {
+            promises.push(createCardsForCategory('recommendedList', data.recommended));
+        }
+        
+        // Wait for all categories to finish loading
+        await Promise.all(promises);
+        
+    } catch (error) {
+        console.error('Error fetching scans homepage:', error);
+        showErrorState(error.message);
+    }
 }
 
 function showLoadingState() {
@@ -83,7 +86,7 @@ function showErrorState(errorMessage) {
     });
 }
 
-function createCardsForCategory(containerId, items) {
+async function createCardsForCategory(containerId, items) {
     const container = document.getElementById(containerId);
     if (!container) {
         console.error(`Container with id '${containerId}' not found`);
@@ -98,15 +101,55 @@ function createCardsForCategory(containerId, items) {
         return;
     }
     
-    items.forEach(item => {
-        const card = createScanCard(item);
+    // Create cards with images asynchronously
+    for (const item of items) {
+        const card = await createScanCard(item);
         container.appendChild(card);
-    });
+    }
 }
 
-function createScanCard(scan) {
+async function fetchMangaDetails(title) {
+    try {
+        // Encode the title for URL
+        const encodedTitle = encodeURIComponent(title);
+        const response = await fetch(`https://api.saumondeluxe.com/scans/manga/${encodedTitle}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const mangaDetails = await response.json();
+        return mangaDetails;
+    } catch (error) {
+        console.error(`Error fetching manga details for "${title}":`, error);
+        return null;
+    }
+}
+
+async function createScanCard(scan) {
     const card = document.createElement('div');
     card.className = 'scanCard';
+    
+    // Create image container with loading placeholder
+    const imageContainer = document.createElement('div');
+    imageContainer.className = 'scanCard-image-container';
+    
+    const image = document.createElement('img');
+    image.className = 'scanCard-image';
+    image.src = './img/placeholder.png'; // Placeholder image
+    image.alt = scan.title || 'Manga cover';
+    
+    // Add loading spinner
+    const imageLoader = document.createElement('div');
+    imageLoader.className = 'image-loader';
+    imageLoader.innerHTML = '⏳';
+    
+    imageContainer.appendChild(image);
+    imageContainer.appendChild(imageLoader);
+    
+    // Create content container
+    const contentContainer = document.createElement('div');
+    contentContainer.className = 'scanCard-content';
     
     // Create title
     const title = document.createElement('h3');
@@ -143,16 +186,51 @@ function createScanCard(scan) {
     metaContainer.appendChild(typeBadge);
     metaContainer.appendChild(popularity);
     
+    // Assemble the content
+    contentContainer.appendChild(title);
+    contentContainer.appendChild(genresContainer);
+    contentContainer.appendChild(metaContainer);
+    
     // Assemble the card
-    card.appendChild(title);
-    card.appendChild(genresContainer);
-    card.appendChild(metaContainer);
+    card.appendChild(imageContainer);
+    card.appendChild(contentContainer);
     
     // Add click event for future functionality
     card.addEventListener('click', () => {
         console.log('Clicked on scan:', scan);
         // You can add navigation or modal functionality here
     });
+      // Fetch manga details for image asynchronously
+    if (scan.title) {
+        fetchMangaDetails(scan.title).then(mangaDetails => {
+            if (mangaDetails && mangaDetails.image_url) {
+                image.onload = () => {
+                    imageLoader.style.display = 'none';
+                    image.style.opacity = '1';
+                    image.classList.add('loaded');
+                };
+                image.onerror = () => {
+                    imageLoader.innerHTML = '📖';
+                    imageLoader.style.color = 'var(--text-muted)';
+                    imageLoader.style.fontSize = '32px';
+                };
+                image.src = mangaDetails.image_url;
+            } else {
+                imageLoader.innerHTML = '📖';
+                imageLoader.style.color = 'var(--text-muted)';
+                imageLoader.style.fontSize = '32px';
+            }
+        }).catch(error => {
+            console.error('Error loading image for', scan.title, ':', error);
+            imageLoader.innerHTML = '📖';
+            imageLoader.style.color = 'var(--text-muted)';
+            imageLoader.style.fontSize = '32px';
+        });
+    } else {
+        imageLoader.innerHTML = '📖';
+        imageLoader.style.color = 'var(--text-muted)';
+        imageLoader.style.fontSize = '32px';
+    }
     
     return card;
 }
