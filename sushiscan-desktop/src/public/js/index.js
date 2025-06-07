@@ -192,12 +192,13 @@ async function createScanCard(scan) {
 
     // Assemble the card
     card.appendChild(imageContainer);
-    card.appendChild(contentContainer);
-
-    // Add click event for future functionality
+    card.appendChild(contentContainer);    // Add click event for future functionality
     card.addEventListener('click', () => {
         console.log('Clicked on scan:', scan);
-        // You can add navigation or modal functionality here
+        // Show manga details
+        if (scan.title) {
+            showMangaDetails(scan.title);
+        }
     });
     // Fetch manga details for image asynchronously
     if (scan.title) {
@@ -467,12 +468,13 @@ async function createSearchResultCard(manga) {
 
     // Assemble the card
     card.appendChild(imageContainer);
-    card.appendChild(contentContainer);
-
-    // Add click event
+    card.appendChild(contentContainer);    // Add click event
     card.addEventListener('click', () => {
         console.log('Clicked on search result:', manga);
-        // You can add navigation functionality here
+        // Show manga details
+        if (manga.title) {
+            showMangaDetails(manga.title);
+        }
     });
 
     // Fetch manga details for image
@@ -565,4 +567,230 @@ function clearSearchAndShowHome() {
 
     // Show homepage content
     showHomepageContent();
+}
+
+// ========== MANGA DETAILS FUNCTIONALITY ========== 
+
+async function showMangaDetails(title) {
+    console.log('Showing details for:', title);
+    
+    // Hide all other content
+    hideAllContent();
+    
+    // Show loading state
+    showMangaDetailsLoading();
+    
+    try {
+        const mangaDetails = await fetchMangaDetails(title);
+        if (mangaDetails) {
+            displayMangaDetails(mangaDetails);
+        } else {
+            showMangaDetailsError('Impossible de charger les détails du manga');
+        }
+    } catch (error) {
+        console.error('Error showing manga details:', error);
+        showMangaDetailsError('Erreur lors du chargement des détails');
+    }
+}
+
+function hideAllContent() {
+    // Hide search section, homepage content, and search results
+    const searchSection = document.querySelector('.search-section');
+    const searchResults = document.getElementById('searchResults');
+    const homepageSections = document.querySelectorAll('.section:not(.search-section):not(#searchResults)');
+    
+    if (searchSection) searchSection.style.display = 'none';
+    if (searchResults) searchResults.style.display = 'none';
+    homepageSections.forEach(section => {
+        section.style.display = 'none';
+    });
+}
+
+function showAllContent() {
+    // Show search section and homepage content, hide manga details
+    const searchSection = document.querySelector('.search-section');
+    const mangaDetails = document.getElementById('mangaDetails');
+    const homepageSections = document.querySelectorAll('.section:not(.search-section):not(#searchResults)');
+    
+    if (searchSection) searchSection.style.display = 'block';
+    if (mangaDetails) mangaDetails.style.display = 'none';
+    homepageSections.forEach(section => {
+        section.style.display = 'block';
+    });
+}
+
+function showMangaDetailsLoading() {
+    const mangaDetails = document.getElementById('mangaDetails');
+    if (!mangaDetails) return;
+    
+    mangaDetails.innerHTML = `
+        <div class="manga-details-header">
+            <h1 class="manga-details-title">📖 Chargement...</h1>
+            <button class="back-btn" onclick="backToHome()">
+                ⬅️ Retour
+            </button>
+        </div>
+        <div class="manga-content">
+            <div class="loading">Chargement des détails...</div>
+        </div>
+    `;
+    mangaDetails.style.display = 'block';
+}
+
+function displayMangaDetails(manga) {
+    const mangaDetails = document.getElementById('mangaDetails');
+    if (!mangaDetails) return;
+    
+    // Format the updated date
+    const updatedDate = manga.updated_at ? 
+        new Date(manga.updated_at).toLocaleDateString('fr-FR', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        }) : 'Date inconnue';
+    
+    // Calculate popularity percentage (assuming max is 10)
+    const popularityPercent = Math.min((manga.popularity || 0) * 10, 100);
+    
+    mangaDetails.innerHTML = `
+        <div class="manga-details-header">
+            <div class="manga-titles">
+                <h1 class="manga-details-title">${manga.title || 'Titre inconnu'}</h1>
+                ${manga.alt_title ? `<p class="manga-alt-title">${manga.alt_title}</p>` : ''}
+            </div>
+            <button class="back-btn" onclick="backToHome()">
+                ⬅️ Retour
+            </button>
+        </div>
+        
+        <div class="manga-content">
+            <div class="manga-image-section">
+                <div class="manga-image-loader">⏳</div>
+                <img class="manga-main-image" alt="${manga.title || 'Manga cover'}" style="opacity: 0;">
+            </div>
+            
+            <div class="manga-info-section">
+                <div class="manga-meta-grid">
+                    <div class="meta-item">
+                        <div class="meta-label">Popularité</div>
+                        <div class="meta-value">${manga.popularity || 0}/10</div>
+                        <div class="popularity-bar">
+                            <div class="popularity-fill" style="width: ${popularityPercent}%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="meta-item">
+                        <div class="meta-label">Chapitres</div>
+                        <div class="meta-value">${manga.total_chapters || 'Non spécifié'}</div>
+                    </div>
+                      <div class="meta-item">
+                        <div class="meta-label">Types</div>
+                        <div class="meta-value">${manga.type ? (Array.isArray(manga.type) ? manga.type.join(', ') : manga.type) : 'Non spécifié'}</div>
+                    </div>
+                    
+                    <div class="meta-item">
+                        <div class="meta-label">Dernière MAJ</div>
+                        <div class="meta-value updated-date">${updatedDate}</div>
+                    </div>
+                </div>
+                  <div class="meta-item">
+                    <div class="meta-label">Genres</div>
+                    <div class="manga-genres-detailed">
+                        ${manga.genres && Array.isArray(manga.genres) && manga.genres.length > 0 ? 
+                            manga.genres.map(genre => `<span class="genre-tag-detailed">${genre}</span>`).join('') : 
+                            '<span class="meta-value">Aucun genre spécifié</span>'}
+                    </div>
+                </div>
+                  <div class="meta-item">
+                    <div class="meta-label">Langues disponibles</div>
+                    <div class="manga-languages">
+                        ${manga.language && Array.isArray(manga.language) && manga.language.length > 0 ? 
+                            manga.language.map(lang => `<span class="language-tag">${lang}</span>`).join('') : 
+                            '<span class="meta-value">Non spécifié</span>'}
+                    </div>
+                </div>
+                  ${manga.scan_types && Array.isArray(manga.scan_types) && manga.scan_types.length > 0 ? `
+                <div class="manga-scan-types">
+                    <div class="scan-types-header">
+                        📚 Types de scans disponibles
+                    </div>
+                    ${manga.scan_types.map(scanType => `
+                        <div class="scan-type-item" onclick="openScanType('${scanType.url || '#'}')">
+                            <span class="scan-type-name">${scanType.name || 'Type inconnu'}</span>
+                            <span class="scan-type-arrow">→</span>
+                        </div>
+                    `).join('')}
+                </div>
+                ` : ''}
+            </div>
+        </div>
+    `;
+    
+    // Load the manga image
+    const imageLoader = mangaDetails.querySelector('.manga-image-loader');
+    const image = mangaDetails.querySelector('.manga-main-image');
+    
+    if (manga.image_url) {
+        image.onload = () => {
+            imageLoader.style.display = 'none';
+            image.style.opacity = '1';
+        };
+        image.onerror = () => {
+            imageLoader.innerHTML = '📖';
+            imageLoader.style.fontSize = '64px';
+            imageLoader.style.color = 'var(--text-muted)';
+        };
+        image.src = manga.image_url;
+    } else {
+        imageLoader.innerHTML = '📖';
+        imageLoader.style.fontSize = '64px';
+        imageLoader.style.color = 'var(--text-muted)';
+    }
+    
+    mangaDetails.style.display = 'block';
+}
+
+function showMangaDetailsError(message) {
+    const mangaDetails = document.getElementById('mangaDetails');
+    if (!mangaDetails) return;
+    
+    mangaDetails.innerHTML = `
+        <div class="manga-details-header">
+            <h1 class="manga-details-title">❌ Erreur</h1>
+            <button class="back-btn" onclick="backToHome()">
+                ⬅️ Retour
+            </button>
+        </div>
+        <div class="manga-content">
+            <div class="error">${message}</div>
+        </div>
+    `;
+    mangaDetails.style.display = 'block';
+}
+
+function backToHome() {
+    // Hide manga details
+    const mangaDetails = document.getElementById('mangaDetails');
+    if (mangaDetails) {
+        mangaDetails.style.display = 'none';
+    }
+    
+    // Show all content
+    showAllContent();
+    
+    // Clear search if any
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.value = '';
+    }
+    
+    // Hide search results
+    hideSearchResults();
+}
+
+function openScanType(url) {
+    console.log('Opening scan type URL:', url);
+    // You can implement navigation to the scan type URL here
+    // For now, we'll just log it
+    alert(`Ouverture de: ${url}`);
 }
