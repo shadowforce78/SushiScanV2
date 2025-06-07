@@ -777,10 +777,10 @@ function backToHome() {
 
 async function openScanType(url) {
     console.log('Opening scan type URL:', url);
-    
+
     try {
         const urlObj = new URL(url);
-        
+
         // Check if it's a SushiScan API URL
         if (urlObj.hostname === 'api.saumondeluxe.com' && urlObj.pathname === '/scans/chapter') {
             const title = urlObj.searchParams.get('title');
@@ -792,18 +792,18 @@ async function openScanType(url) {
                 return;
             }
         }
-        
+
         // For other URLs, try to extract manga info and scan type info from current context
         const mangaDetailsElement = document.getElementById('mangaDetails');
         if (mangaDetailsElement && mangaDetailsElement.style.display === 'block') {
             const titleElement = mangaDetailsElement.querySelector('.manga-details-title');
             const mangaTitle = titleElement ? titleElement.textContent : null;
-            
+
             if (mangaTitle) {
                 // Try to find the scan type that was clicked
                 const scanTypeItems = mangaDetailsElement.querySelectorAll('.scan-type-item');
                 let clickedScanType = null;
-                
+
                 scanTypeItems.forEach(item => {
                     const scanTypeUrl = item.getAttribute('onclick');
                     if (scanTypeUrl && scanTypeUrl.includes(url)) {
@@ -813,20 +813,20 @@ async function openScanType(url) {
                         }
                     }
                 });
-                
+
                 if (clickedScanType) {
-                    console.log('Attempting to load chapter for:', { 
-                        title: mangaTitle, 
-                        scanName: clickedScanType 
+                    console.log('Attempting to load chapter for:', {
+                        title: mangaTitle,
+                        scanName: clickedScanType
                     });
-                    
+
                     // Try to load chapter 1 by default
                     await showChapterViewer(mangaTitle, clickedScanType, '1');
                     return;
                 }
             }
         }
-        
+
         // Fallback: open external URL
         console.log('Opening external URL:', url);
         if (window.electronAPI && window.electronAPI.openExternal) {
@@ -834,7 +834,7 @@ async function openScanType(url) {
         } else {
             window.open(url, '_blank');
         }
-        
+
     } catch (error) {
         console.error('Error parsing URL:', error);
         alert('Erreur lors de l\'ouverture du lien');
@@ -933,7 +933,7 @@ async function displayChapter(chapterData) {
     const scanName = chapterData.scan_name;
 
     // Format chapter date
-    const addedDate = chapterData.added_at ? 
+    const addedDate = chapterData.added_at ?
         new Date(chapterData.added_at).toLocaleDateString('fr-FR', {
             year: 'numeric',
             month: 'long',
@@ -997,12 +997,12 @@ async function displayChapter(chapterData) {
 async function navigateToChapter(direction, currentTitle, currentScanName, currentChapterNumber) {
     const currentChapter = parseInt(currentChapterNumber);
     const newChapterNumber = direction === 'next' ? currentChapter + 1 : currentChapter - 1;
-    
+
     if (newChapterNumber < 1) {
         alert('Vous êtes déjà au premier chapitre');
         return;
     }
-    
+
     console.log(`Navigating to chapter ${newChapterNumber}`);
     await showChapterViewer(currentTitle, currentScanName, newChapterNumber.toString());
 }
@@ -1045,14 +1045,14 @@ async function loadChapterPages(imageUrls) {
             }
 
             const currentUrl = urls[urlIndex];
-            
+
             // Add visual indicator if using fallback URL
             if (urlIndex > 0) {
                 loader.classList.add('retrying');
                 loader.title = `Tentative ${urlIndex + 1}/${urls.length} - Utilisation d'une méthode alternative`;
                 pageDiv.setAttribute('data-fallback-used', urlIndex);
             }
-            
+
             console.log(`Trying URL ${urlIndex + 1}/${urls.length} for page ${index + 1}:`, currentUrl);
 
             image.onload = () => {
@@ -1060,12 +1060,12 @@ async function loadChapterPages(imageUrls) {
                 loader.style.display = 'none';
                 loader.classList.remove('retrying');
                 image.style.opacity = '1';
-                
+
                 // Add success indicator if fallback was used
                 if (urlIndex > 0) {
                     console.info(`Page ${index + 1} loaded using fallback method ${urlIndex + 1}`);
                 }
-                
+
                 loadedPages++;
                 updateProgress();
             };
@@ -1073,7 +1073,7 @@ async function loadChapterPages(imageUrls) {
             image.onerror = () => {
                 console.warn(`Failed to load page ${index + 1} with URL ${urlIndex + 1}/${urls.length}:`, currentUrl);
                 loader.classList.remove('retrying');
-                
+
                 // Try next fallback URL after a short delay
                 setTimeout(() => tryLoadImage(urls, urlIndex + 1), 1000);
             };
@@ -1116,7 +1116,7 @@ function convertGoogleDriveUrl(url) {
         if (url.includes('drive.google.com')) {
             // Extract file ID from various Google Drive URL formats
             let fileId = null;
-            
+
             // Format: https://drive.google.com/file/d/FILE_ID/view
             if (url.includes('/file/d/')) {
                 const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
@@ -1132,13 +1132,13 @@ function convertGoogleDriveUrl(url) {
                 const match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
                 if (match) fileId = match[1];
             }
-            
+
             if (fileId) {
                 // Return the new Google Drive usercontent URL (current working method)
                 return `https://drive.usercontent.google.com/download?id=${fileId}&export=view&authuser=0`;
             }
         }
-        
+
         // Return original URL if not a Google Drive URL or couldn't extract ID
         return url;
     } catch (error) {
@@ -1150,34 +1150,35 @@ function convertGoogleDriveUrl(url) {
 // Function to get multiple fallback URLs for Google Drive images
 function getGoogleDriveFallbackUrls(url) {
     const fallbackUrls = [];
-    
+
     try {
         if (url.includes('drive.google.com')) {
             let fileId = null;
-            
+
             // Extract file ID
             if (url.includes('/file/d/')) {
                 const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
-                if (match) fileId = match[1];            } else if (url.includes('open?id=')) {
+                if (match) fileId = match[1];
+            } else if (url.includes('open?id=')) {
                 const match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
                 if (match) fileId = match[1];
             } else if (url.includes('uc?id=') || url.includes('uc?export=view&id=')) {
                 const match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
                 if (match) fileId = match[1];
             }
-              if (fileId) {
+            if (fileId) {
                 // Primary method: New Google Drive usercontent URL (most reliable, highest quality)
                 fallbackUrls.push(`https://drive.usercontent.google.com/download?id=${fileId}&export=view&authuser=0`);
-                
+
                 // Alternative method 1: Google User Content with high resolution (excellent for manga)
                 fallbackUrls.push(`https://lh3.googleusercontent.com/d/${fileId}=w2048-h2048`);
-                
+
                 // Alternative method 2: Google User Content with very high resolution
                 fallbackUrls.push(`https://lh3.googleusercontent.com/d/${fileId}=w4096-h4096`);
-                
+
                 // Alternative method 3: Different usercontent variations
                 fallbackUrls.push(`https://drive.usercontent.google.com/download?id=${fileId}&export=view`);
-                
+
                 // Alternative method 4: Original method (deprecated but kept as fallback)
                 fallbackUrls.push(`https://drive.google.com/uc?export=view&id=${fileId}`);
             }
@@ -1185,12 +1186,12 @@ function getGoogleDriveFallbackUrls(url) {
     } catch (error) {
         console.error('Error generating fallback URLs:', error);
     }
-    
+
     // If no Google Drive URLs could be generated, return the original
     if (fallbackUrls.length === 0) {
         fallbackUrls.push(url);
     }
-    
+
     return fallbackUrls;
 }
 
