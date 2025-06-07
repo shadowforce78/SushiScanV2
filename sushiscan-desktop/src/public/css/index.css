@@ -209,6 +209,93 @@ body {
     transform: translateY(0);
 }
 
+/* ========== SEARCH RESULTS ========== */
+.search-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.back-to-home-btn {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.back-to-home-btn:hover {
+    background: var(--accent-orange);
+    color: white;
+    border-color: var(--accent-orange);
+    transform: translateY(-1px);
+}
+
+.search-result-card {
+    border-left: 3px solid var(--accent-blue);
+}
+
+.search-indicator {
+    color: var(--accent-blue);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.no-results {
+    text-align: center;
+    padding: 80px 40px;
+    color: var(--text-muted);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    grid-column: 1 / -1; /* Take full width of grid */
+}
+
+.no-results-icon {
+    font-size: 64px;
+    opacity: 0.5;
+    margin-bottom: 8px;
+}
+
+.no-results-text {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+}
+
+.no-results-suggestion {
+    font-size: 14px;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+#searchResults {
+    animation: slideIn 0.4s ease forwards;
+}
+
+.search-result-card {
+    animation: slideIn 0.3s ease forwards;
+}
+
+.search-result-card:nth-child(1) { animation-delay: 0.05s; }
+.search-result-card:nth-child(2) { animation-delay: 0.1s; }
+.search-result-card:nth-child(3) { animation-delay: 0.15s; }
+.search-result-card:nth-child(4) { animation-delay: 0.2s; }
+.search-result-card:nth-child(5) { animation-delay: 0.25s; }
+.search-result-card:nth-child(6) { animation-delay: 0.3s; }
+
 /* ========== SECTION TITLES ========== */
 .section-title {
     margin: 0 0 24px 0;
@@ -520,6 +607,15 @@ body {
     
     .section-title {
         font-size: 24px;
+    }
+    
+    .search-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .back-to-home-btn {
+        align-self: flex-start;
     }
 }
 
