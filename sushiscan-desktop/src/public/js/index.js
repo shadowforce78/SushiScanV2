@@ -775,9 +775,441 @@ function backToHome() {
     hideSearchResults();
 }
 
-function openScanType(url) {
+async function openScanType(url) {
     console.log('Opening scan type URL:', url);
-    // You can implement navigation to the scan type URL here
-    // For now, we'll just log it
-    alert(`Ouverture de: ${url}`);
+    
+    try {
+        const urlObj = new URL(url);
+        
+        // Check if it's a SushiScan API URL
+        if (urlObj.hostname === 'api.saumondeluxe.com' && urlObj.pathname === '/scans/chapter') {
+            const title = urlObj.searchParams.get('title');
+            const scanName = urlObj.searchParams.get('scan_name');
+            const chapterNumber = urlObj.searchParams.get('chapter_number');
+
+            if (title && scanName && chapterNumber) {
+                showChapterViewer(title, scanName, chapterNumber);
+                return;
+            }
+        }
+        
+        // For other URLs, try to extract manga info and scan type info from current context
+        const mangaDetailsElement = document.getElementById('mangaDetails');
+        if (mangaDetailsElement && mangaDetailsElement.style.display === 'block') {
+            const titleElement = mangaDetailsElement.querySelector('.manga-details-title');
+            const mangaTitle = titleElement ? titleElement.textContent : null;
+            
+            if (mangaTitle) {
+                // Try to find the scan type that was clicked
+                const scanTypeItems = mangaDetailsElement.querySelectorAll('.scan-type-item');
+                let clickedScanType = null;
+                
+                scanTypeItems.forEach(item => {
+                    const scanTypeUrl = item.getAttribute('onclick');
+                    if (scanTypeUrl && scanTypeUrl.includes(url)) {
+                        const scanNameElement = item.querySelector('.scan-type-name');
+                        if (scanNameElement) {
+                            clickedScanType = scanNameElement.textContent;
+                        }
+                    }
+                });
+                
+                if (clickedScanType) {
+                    console.log('Attempting to load chapter for:', { 
+                        title: mangaTitle, 
+                        scanName: clickedScanType 
+                    });
+                    
+                    // Try to load chapter 1 by default
+                    await showChapterViewer(mangaTitle, clickedScanType, '1');
+                    return;
+                }
+            }
+        }
+        
+        // Fallback: open external URL
+        console.log('Opening external URL:', url);
+        if (window.electronAPI && window.electronAPI.openExternal) {
+            window.electronAPI.openExternal(url);
+        } else {
+            window.open(url, '_blank');
+        }
+        
+    } catch (error) {
+        console.error('Error parsing URL:', error);
+        alert('Erreur lors de l\'ouverture du lien');
+    }
+}
+
+// ========== CHAPTER VIEWER FUNCTIONALITY ========== 
+
+async function fetchChapterData(title, scanName, chapterNumber) {
+    try {
+        const encodedTitle = encodeURIComponent(title);
+        const encodedScanName = encodeURIComponent(scanName);
+        const encodedChapterNumber = encodeURIComponent(chapterNumber);
+
+        const url = `https://api.saumondeluxe.com/scans/chapter?title=${encodedTitle}&scan_name=${encodedScanName}&chapter_number=${encodedChapterNumber}`;
+        const response = await fetch(url);
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const chapterData = await response.json();
+        return chapterData;
+    } catch (error) {
+        console.error(`Error fetching chapter data for "${title}" chapter ${chapterNumber}:`, error);
+        return null;
+    }
+}
+
+async function showChapterViewer(title, scanName, chapterNumber) {
+    console.log('Showing chapter:', { title, scanName, chapterNumber });
+
+    // Hide all other content
+    hideAllContentIncludingManga();
+
+    // Show loading state
+    showChapterLoading();
+
+    try {
+        const chapterData = await fetchChapterData(title, scanName, chapterNumber);
+        if (chapterData) {
+            displayChapter(chapterData);
+        } else {
+            showChapterError('Impossible de charger les pages du chapitre');
+        }
+    } catch (error) {
+        console.error('Error showing chapter:', error);
+        showChapterError('Erreur lors du chargement du chapitre');
+    }
+}
+
+function hideAllContentIncludingManga() {
+    // Hide all content including manga details
+    const searchSection = document.querySelector('.search-section');
+    const searchResults = document.getElementById('searchResults');
+    const mangaDetails = document.getElementById('mangaDetails');
+    const homepageSections = document.querySelectorAll('.section:not(.search-section):not(#searchResults)');
+
+    if (searchSection) searchSection.style.display = 'none';
+    if (searchResults) searchResults.style.display = 'none';
+    if (mangaDetails) mangaDetails.style.display = 'none';
+    homepageSections.forEach(section => {
+        section.style.display = 'none';
+    });
+}
+
+function showChapterLoading() {
+    const chapterViewer = document.getElementById('chapterViewer');
+    if (!chapterViewer) return;
+
+    chapterViewer.innerHTML = `
+        <div class="chapter-header">
+            <div class="chapter-info">
+                <h1 class="chapter-title">📖 Chargement du chapitre...</h1>
+            </div>
+            <div class="chapter-navigation">
+                <button class="nav-btn back-to-manga-btn" onclick="backToMangaFromChapter()">
+                    ⬅️ Retour aux détails
+                </button>
+            </div>
+        </div>
+        <div class="chapter-loading">
+            Chargement des pages...
+        </div>
+    `;
+    chapterViewer.style.display = 'block';
+}
+
+async function displayChapter(chapterData) {
+    const chapterViewer = document.getElementById('chapterViewer');
+    if (!chapterViewer) return;
+
+    // Get current chapter info for navigation
+    const currentChapter = parseInt(chapterData.number) || 1;
+    const title = chapterData.manga_title;
+    const scanName = chapterData.scan_name;
+
+    // Format chapter date
+    const addedDate = chapterData.added_at ? 
+        new Date(chapterData.added_at).toLocaleDateString('fr-FR', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        }) : 'Date inconnue';
+
+    chapterViewer.innerHTML = `
+        <div class="chapter-header">
+            <div class="chapter-info">
+                <h1 class="chapter-title">${chapterData.title || `Chapitre ${chapterData.number || 'Inconnu'}`}</h1>
+                <div class="chapter-meta">
+                    <div class="chapter-meta-item">
+                        📚 ${chapterData.manga_title || 'Manga inconnu'}
+                    </div>
+                    <div class="chapter-meta-item">
+                        🏷️ ${chapterData.scan_name || 'Scan inconnu'}
+                    </div>
+                    <div class="chapter-meta-item">
+                        📄 ${chapterData.page_count || chapterData.image_urls?.length || 0} pages
+                    </div>
+                    <div class="chapter-meta-item">
+                        📅 ${addedDate}
+                    </div>
+                </div>
+            </div>
+            <div class="chapter-navigation">
+                <button class="nav-btn ${currentChapter <= 1 ? 'disabled' : ''}" 
+                        onclick="${currentChapter > 1 ? `navigateToChapter('prev', '${title}', '${scanName}', '${currentChapter}')` : ''}"
+                        ${currentChapter <= 1 ? 'disabled' : ''}>
+                    ⬅️ Chapitre précédent
+                </button>
+                <button class="nav-btn back-to-manga-btn" onclick="backToMangaFromChapter()">
+                    📖 Retour aux détails
+                </button>
+                <button class="nav-btn" onclick="navigateToChapter('next', '${title}', '${scanName}', '${currentChapter}')">
+                    Chapitre suivant ➡️
+                </button>
+            </div>
+        </div>
+        <div class="chapter-progress" id="chapterProgress">
+            <div class="chapter-progress-bar">
+                <div class="chapter-progress-fill" id="chapterProgressFill"></div>
+            </div>
+            <div class="chapter-progress-text" id="chapterProgressText">0/${chapterData.image_urls?.length || 0}</div>
+        </div>
+        <div class="chapter-pages" id="chapterPages">
+            <!-- Pages will be loaded here -->
+        </div>
+    `;
+
+    // Load chapter pages
+    if (chapterData.image_urls && chapterData.image_urls.length > 0) {
+        await loadChapterPages(chapterData.image_urls);
+    } else {
+        showChapterError('Aucune page disponible pour ce chapitre');
+    }
+
+    chapterViewer.style.display = 'block';
+}
+
+async function navigateToChapter(direction, currentTitle, currentScanName, currentChapterNumber) {
+    const currentChapter = parseInt(currentChapterNumber);
+    const newChapterNumber = direction === 'next' ? currentChapter + 1 : currentChapter - 1;
+    
+    if (newChapterNumber < 1) {
+        alert('Vous êtes déjà au premier chapitre');
+        return;
+    }
+    
+    console.log(`Navigating to chapter ${newChapterNumber}`);
+    await showChapterViewer(currentTitle, currentScanName, newChapterNumber.toString());
+}
+
+async function loadChapterPages(imageUrls) {
+    const pagesContainer = document.getElementById('chapterPages');
+    const progressFill = document.getElementById('chapterProgressFill');
+    const progressText = document.getElementById('chapterProgressText');
+
+    if (!pagesContainer) return;
+
+    const totalPages = imageUrls.length;
+    let loadedPages = 0;
+
+    // Create page elements
+    imageUrls.forEach((imageUrl, index) => {
+        const pageDiv = document.createElement('div');
+        pageDiv.className = 'chapter-page';
+        pageDiv.innerHTML = `
+            <div class="chapter-page-loader">⏳</div>
+            <img class="chapter-page-image" 
+                 alt="Page ${index + 1}" 
+                 style="opacity: 0;"
+                 crossorigin="anonymous">
+            <div class="chapter-page-number">${index + 1}</div>
+        `;
+
+        const image = pageDiv.querySelector('.chapter-page-image');
+        const loader = pageDiv.querySelector('.chapter-page-loader');
+
+        // Function to try loading image with fallback URLs
+        const tryLoadImage = async (urls, urlIndex = 0) => {
+            if (urlIndex >= urls.length) {
+                // All URLs failed
+                console.error('All fallback URLs failed for image:', imageUrl);
+                loader.innerHTML = '❌';
+                loader.style.color = 'var(--accent-red)';
+                loader.title = 'Échec du chargement de l\'image';
+                loadedPages++;
+                updateProgress();
+                return;
+            }
+
+            const currentUrl = urls[urlIndex];
+            console.log(`Trying URL ${urlIndex + 1}/${urls.length} for page ${index + 1}:`, currentUrl);
+
+            image.onload = () => {
+                console.log(`Successfully loaded page ${index + 1} with URL ${urlIndex + 1}`);
+                loader.style.display = 'none';
+                image.style.opacity = '1';
+                loadedPages++;
+                updateProgress();
+            };
+
+            image.onerror = () => {
+                console.warn(`Failed to load page ${index + 1} with URL ${urlIndex + 1}:`, currentUrl);
+                // Try next fallback URL
+                setTimeout(() => tryLoadImage(urls, urlIndex + 1), 500);
+            };
+
+            image.src = currentUrl;
+        };
+
+        const updateProgress = () => {
+            // Update progress
+            const progressPercent = (loadedPages / totalPages) * 100;
+            if (progressFill) progressFill.style.width = `${progressPercent}%`;
+            if (progressText) progressText.textContent = `${loadedPages}/${totalPages}`;
+
+            // Hide progress bar when all pages are loaded/failed
+            if (loadedPages === totalPages) {
+                setTimeout(() => {
+                    const progressContainer = document.getElementById('chapterProgress');
+                    if (progressContainer) {
+                        progressContainer.style.display = 'none';
+                    }
+                }, 1000);
+            }
+        };
+
+        // Get fallback URLs and start loading
+        const fallbackUrls = getGoogleDriveFallbackUrls(imageUrl);
+        tryLoadImage(fallbackUrls);
+
+        pagesContainer.appendChild(pageDiv);
+    });
+}
+
+// Function to convert Google Drive URLs to direct image URLs with multiple fallback methods
+function convertGoogleDriveUrl(url) {
+    try {
+        // Check if it's a Google Drive URL
+        if (url.includes('drive.google.com')) {
+            // Extract file ID from various Google Drive URL formats
+            let fileId = null;
+            
+            // Format: https://drive.google.com/file/d/FILE_ID/view
+            if (url.includes('/file/d/')) {
+                const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+                if (match) fileId = match[1];
+            }
+            // Format: https://drive.google.com/open?id=FILE_ID
+            else if (url.includes('open?id=')) {
+                const match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+                if (match) fileId = match[1];
+            }
+            // Format: https://drive.google.com/uc?id=FILE_ID
+            else if (url.includes('uc?id=')) {
+                const match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+                if (match) fileId = match[1];
+            }
+            
+            if (fileId) {
+                // Return the primary method (Google User Content)
+                return `https://lh3.googleusercontent.com/d/${fileId}=w1000-h1000`;
+            }
+        }
+        
+        // Return original URL if not a Google Drive URL or couldn't extract ID
+        return url;
+    } catch (error) {
+        console.error('Error processing Google Drive URL:', error);
+        return url;
+    }
+}
+
+// Function to get multiple fallback URLs for Google Drive images
+function getGoogleDriveFallbackUrls(url) {
+    const fallbackUrls = [];
+    
+    try {
+        if (url.includes('drive.google.com')) {
+            let fileId = null;
+            
+            // Extract file ID
+            if (url.includes('/file/d/')) {
+                const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+                if (match) fileId = match[1];
+            } else if (url.includes('open?id=')) {
+                const match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+                if (match) fileId = match[1];
+            } else if (url.includes('uc?id=')) {
+                const match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+                if (match) fileId = match[1];
+            }
+            
+            if (fileId) {
+                // Primary method: Google User Content (usually works best)
+                fallbackUrls.push(`https://lh3.googleusercontent.com/d/${fileId}=w1000-h1000`);
+                
+                // Alternative method 1: Thumbnail API
+                fallbackUrls.push(`https://drive.google.com/thumbnail?id=${fileId}&sz=w1000-h1000`);
+                
+                // Alternative method 2: CORS proxy with original UC method
+                fallbackUrls.push(`https://cors-anywhere.herokuapp.com/https://drive.google.com/uc?export=view&id=${fileId}`);
+                
+                // Alternative method 3: Different proxy
+                fallbackUrls.push(`https://api.allorigins.win/raw?url=${encodeURIComponent(`https://drive.google.com/uc?export=view&id=${fileId}`)}`);
+                
+                // Alternative method 4: Original method as last resort
+                fallbackUrls.push(`https://drive.google.com/uc?export=view&id=${fileId}`);
+            }
+        }
+    } catch (error) {
+        console.error('Error generating fallback URLs:', error);
+    }
+    
+    // If no Google Drive URLs could be generated, return the original
+    if (fallbackUrls.length === 0) {
+        fallbackUrls.push(url);
+    }
+    
+    return fallbackUrls;
+}
+
+function showChapterError(message) {
+    const chapterViewer = document.getElementById('chapterViewer');
+    if (!chapterViewer) return;
+
+    chapterViewer.innerHTML = `
+        <div class="chapter-header">
+            <div class="chapter-info">
+                <h1 class="chapter-title">❌ Erreur</h1>
+            </div>
+            <div class="chapter-navigation">
+                <button class="nav-btn back-to-manga-btn" onclick="backToMangaFromChapter()">
+                    ⬅️ Retour aux détails
+                </button>
+            </div>
+        </div>
+        <div class="chapter-error">
+            ${message}
+        </div>
+    `;
+    chapterViewer.style.display = 'block';
+}
+
+function backToMangaFromChapter() {
+    // Hide chapter viewer
+    const chapterViewer = document.getElementById('chapterViewer');
+    if (chapterViewer) {
+        chapterViewer.style.display = 'none';
+    }
+
+    // Show manga details
+    const mangaDetails = document.getElementById('mangaDetails');
+    if (mangaDetails) {
+        mangaDetails.style.display = 'block';
+    }
 }

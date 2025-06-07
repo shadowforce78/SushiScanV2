@@ -912,6 +912,305 @@ body {
     }
 }
 
+/* ========== CHAPTER VIEWER ========== */
+.chapter-viewer {
+    display: none;
+    padding: 24px;
+    margin: 20px;
+    background: var(--bg-primary);
+    border-radius: 16px;
+    position: relative;
+    min-height: 100vh;
+}
+
+.chapter-header {
+    background: var(--gradient-card);
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    box-shadow: var(--shadow-medium);
+    backdrop-filter: blur(10px);
+}
+
+.chapter-info {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.chapter-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.chapter-meta {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.chapter-meta-item {
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.chapter-navigation {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.nav-btn {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: 10px 16px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+}
+
+.nav-btn:hover {
+    background: var(--accent-orange);
+    color: white;
+    border-color: var(--accent-orange);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-medium);
+}
+
+.nav-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.nav-btn:disabled:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    border-color: var(--border-color);
+    transform: none;
+    box-shadow: none;
+}
+
+.back-to-manga-btn {
+    background: var(--accent-blue);
+    color: white;
+    border-color: var(--accent-blue);
+}
+
+.back-to-manga-btn:hover {
+    background: var(--accent-purple);
+    border-color: var(--accent-purple);
+}
+
+.chapter-pages {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.chapter-page {
+    width: 100%;
+    max-width: 800px;
+    position: relative;
+    margin-bottom: 2px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: var(--shadow-medium);
+    transition: all 0.3s ease;
+}
+
+.chapter-page:hover {
+    box-shadow: var(--shadow-heavy);
+    transform: scale(1.01);
+}
+
+.chapter-page-image {
+    width: 100%;
+    height: auto;
+    display: block;
+    background: var(--bg-tertiary);
+    transition: opacity 0.3s ease;
+}
+
+.chapter-page-loader {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 32px;
+    color: var(--text-muted);
+    animation: pulse 2s infinite;
+    z-index: 2;
+    background: var(--bg-secondary);
+    padding: 20px;
+    border-radius: 50%;
+    box-shadow: var(--shadow-medium);
+}
+
+.chapter-page-number {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    backdrop-filter: blur(10px);
+    box-shadow: var(--shadow-light);
+}
+
+.chapter-error {
+    text-align: center;
+    color: var(--accent-red);
+    padding: 60px 24px;
+    background: rgba(239, 68, 68, 0.1);
+    border-radius: 12px;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    font-weight: 500;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    margin: 40px 0;
+}
+
+.chapter-error::before {
+    content: '📖💥';
+    font-size: 48px;
+    margin-bottom: 12px;
+}
+
+.chapter-loading {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 80px 24px;
+    font-size: 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+.chapter-loading::before {
+    content: '📖';
+    font-size: 48px;
+    animation: pulse 2s infinite;
+    margin-bottom: 16px;
+}
+
+/* Progress indicator for chapter loading */
+.chapter-progress {
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: var(--shadow-light);
+}
+
+.chapter-progress-bar {
+    flex: 1;
+    height: 8px;
+    background: var(--bg-secondary);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.chapter-progress-fill {
+    height: 100%;
+    background: var(--gradient-primary);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+    width: 0%;
+}
+
+.chapter-progress-text {
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 500;
+    min-width: 80px;
+    text-align: right;
+}
+
+/* Chapter viewer responsive design */
+@media (max-width: 768px) {
+    .chapter-viewer {
+        margin: 12px;
+        padding: 16px;
+    }
+    
+    .chapter-header {
+        padding: 16px;
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .chapter-navigation {
+        justify-content: space-between;
+        flex-wrap: wrap;
+    }
+    
+    .chapter-title {
+        font-size: 20px;
+    }
+    
+    .chapter-meta {
+        gap: 12px;
+    }
+    
+    .nav-btn {
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+    
+    .chapter-pages {
+        gap: 4px;
+    }
+    
+    .chapter-page {
+        max-width: 100%;
+        margin-bottom: 1px;
+    }
+    
+    .chapter-page-number {
+        top: 12px;
+        right: 12px;
+        padding: 6px 12px;
+        font-size: 13px;
+    }
+}
+
 /* ========== PLACEHOLDER IMAGE ========== */
 .scanCard-image[src="./img/placeholder.png"] {
     background: var(--bg-tertiary);
