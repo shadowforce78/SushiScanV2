@@ -573,13 +573,13 @@ function clearSearchAndShowHome() {
 
 async function showMangaDetails(title) {
     console.log('Showing details for:', title);
-    
+
     // Hide all other content
     hideAllContent();
-    
+
     // Show loading state
     showMangaDetailsLoading();
-    
+
     try {
         const mangaDetails = await fetchMangaDetails(title);
         if (mangaDetails) {
@@ -598,7 +598,7 @@ function hideAllContent() {
     const searchSection = document.querySelector('.search-section');
     const searchResults = document.getElementById('searchResults');
     const homepageSections = document.querySelectorAll('.section:not(.search-section):not(#searchResults)');
-    
+
     if (searchSection) searchSection.style.display = 'none';
     if (searchResults) searchResults.style.display = 'none';
     homepageSections.forEach(section => {
@@ -611,7 +611,7 @@ function showAllContent() {
     const searchSection = document.querySelector('.search-section');
     const mangaDetails = document.getElementById('mangaDetails');
     const homepageSections = document.querySelectorAll('.section:not(.search-section):not(#searchResults)');
-    
+
     if (searchSection) searchSection.style.display = 'block';
     if (mangaDetails) mangaDetails.style.display = 'none';
     homepageSections.forEach(section => {
@@ -622,7 +622,7 @@ function showAllContent() {
 function showMangaDetailsLoading() {
     const mangaDetails = document.getElementById('mangaDetails');
     if (!mangaDetails) return;
-    
+
     mangaDetails.innerHTML = `
         <div class="manga-details-header">
             <h1 class="manga-details-title">📖 Chargement...</h1>
@@ -640,14 +640,14 @@ function showMangaDetailsLoading() {
 function displayMangaDetails(manga) {
     const mangaDetails = document.getElementById('mangaDetails');
     if (!mangaDetails) return;
-      // Format the updated date
-    const updatedDate = manga.updated_at ? 
+    // Format the updated date
+    const updatedDate = manga.updated_at ?
         new Date(manga.updated_at).toLocaleDateString('fr-FR', {
             year: 'numeric',
             month: 'long',
             day: 'numeric'
         }) : 'Date inconnue';
-    
+
     mangaDetails.innerHTML = `
         <div class="manga-details-header">
             <div class="manga-titles">
@@ -683,17 +683,17 @@ function displayMangaDetails(manga) {
                   <div class="meta-item">
                     <div class="meta-label">Genres</div>
                     <div class="manga-genres-detailed">
-                        ${manga.genres && Array.isArray(manga.genres) && manga.genres.length > 0 ? 
-                            manga.genres.map(genre => `<span class="genre-tag-detailed">${genre}</span>`).join('') : 
-                            '<span class="meta-value">Aucun genre spécifié</span>'}
+                        ${manga.genres && Array.isArray(manga.genres) && manga.genres.length > 0 ?
+            manga.genres.map(genre => `<span class="genre-tag-detailed">${genre}</span>`).join('') :
+            '<span class="meta-value">Aucun genre spécifié</span>'}
                     </div>
                 </div>
                   <div class="meta-item">
                     <div class="meta-label">Langues disponibles</div>
                     <div class="manga-languages">
-                        ${manga.language && Array.isArray(manga.language) && manga.language.length > 0 ? 
-                            manga.language.map(lang => `<span class="language-tag">${lang}</span>`).join('') : 
-                            '<span class="meta-value">Non spécifié</span>'}
+                        ${manga.language && Array.isArray(manga.language) && manga.language.length > 0 ?
+            manga.language.map(lang => `<span class="language-tag">${lang}</span>`).join('') :
+            '<span class="meta-value">Non spécifié</span>'}
                     </div>
                 </div>
                   ${manga.scan_types && Array.isArray(manga.scan_types) && manga.scan_types.length > 0 ? `
@@ -712,11 +712,11 @@ function displayMangaDetails(manga) {
             </div>
         </div>
     `;
-    
+
     // Load the manga image
     const imageLoader = mangaDetails.querySelector('.manga-image-loader');
     const image = mangaDetails.querySelector('.manga-main-image');
-    
+
     if (manga.image_url) {
         image.onload = () => {
             imageLoader.style.display = 'none';
@@ -733,14 +733,14 @@ function displayMangaDetails(manga) {
         imageLoader.style.fontSize = '64px';
         imageLoader.style.color = 'var(--text-muted)';
     }
-    
+
     mangaDetails.style.display = 'block';
 }
 
 function showMangaDetailsError(message) {
     const mangaDetails = document.getElementById('mangaDetails');
     if (!mangaDetails) return;
-    
+
     mangaDetails.innerHTML = `
         <div class="manga-details-header">
             <h1 class="manga-details-title">❌ Erreur</h1>
@@ -761,16 +761,16 @@ function backToHome() {
     if (mangaDetails) {
         mangaDetails.style.display = 'none';
     }
-    
+
     // Show all content
     showAllContent();
-    
+
     // Clear search if any
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
         searchInput.value = '';
     }
-    
+
     // Hide search results
     hideSearchResults();
 }
