@@ -1165,16 +1165,15 @@ function getGoogleDriveFallbackUrls(url) {
                 const match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
                 if (match) fileId = match[1];
             }
-            
-            if (fileId) {
-                // Primary method: New Google Drive usercontent URL (most reliable)
+              if (fileId) {
+                // Primary method: New Google Drive usercontent URL (most reliable, highest quality)
                 fallbackUrls.push(`https://drive.usercontent.google.com/download?id=${fileId}&export=view&authuser=0`);
                 
-                // Alternative method 1: Google User Content (still works sometimes)
-                fallbackUrls.push(`https://lh3.googleusercontent.com/d/${fileId}=w1000-h1000`);
+                // Alternative method 1: Google User Content with high resolution (excellent for manga)
+                fallbackUrls.push(`https://lh3.googleusercontent.com/d/${fileId}=w2048-h2048`);
                 
-                // Alternative method 2: Thumbnail API (lower quality but reliable)
-                fallbackUrls.push(`https://drive.google.com/thumbnail?id=${fileId}&sz=w1000-h1000`);
+                // Alternative method 2: Google User Content with very high resolution
+                fallbackUrls.push(`https://lh3.googleusercontent.com/d/${fileId}=w4096-h4096`);
                 
                 // Alternative method 3: Different usercontent variations
                 fallbackUrls.push(`https://drive.usercontent.google.com/download?id=${fileId}&export=view`);
