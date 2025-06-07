@@ -1134,8 +1134,8 @@ function convertGoogleDriveUrl(url) {
             }
             
             if (fileId) {
-                // Return the primary method (Google User Content)
-                return `https://lh3.googleusercontent.com/d/${fileId}=w1000-h1000`;
+                // Return the new Google Drive usercontent URL (current working method)
+                return `https://drive.usercontent.google.com/download?id=${fileId}&export=view&authuser=0`;
             }
         }
         
@@ -1168,19 +1168,19 @@ function getGoogleDriveFallbackUrls(url) {
             }
             
             if (fileId) {
-                // Primary method: Google User Content (usually works best)
+                // Primary method: New Google Drive usercontent URL (most reliable)
+                fallbackUrls.push(`https://drive.usercontent.google.com/download?id=${fileId}&export=view&authuser=0`);
+                
+                // Alternative method 1: Google User Content (still works sometimes)
                 fallbackUrls.push(`https://lh3.googleusercontent.com/d/${fileId}=w1000-h1000`);
                 
-                // Alternative method 1: Thumbnail API
+                // Alternative method 2: Thumbnail API (lower quality but reliable)
                 fallbackUrls.push(`https://drive.google.com/thumbnail?id=${fileId}&sz=w1000-h1000`);
                 
-                // Alternative method 2: CORS proxy with original UC method
-                fallbackUrls.push(`https://cors-anywhere.herokuapp.com/https://drive.google.com/uc?export=view&id=${fileId}`);
+                // Alternative method 3: Different usercontent variations
+                fallbackUrls.push(`https://drive.usercontent.google.com/download?id=${fileId}&export=view`);
                 
-                // Alternative method 3: Different proxy
-                fallbackUrls.push(`https://api.allorigins.win/raw?url=${encodeURIComponent(`https://drive.google.com/uc?export=view&id=${fileId}`)}`);
-                
-                // Alternative method 4: Original method as last resort
+                // Alternative method 4: Original method (deprecated but kept as fallback)
                 fallbackUrls.push(`https://drive.google.com/uc?export=view&id=${fileId}`);
             }
         }
