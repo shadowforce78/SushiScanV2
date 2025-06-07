@@ -1158,11 +1158,10 @@ function getGoogleDriveFallbackUrls(url) {
             // Extract file ID
             if (url.includes('/file/d/')) {
                 const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
-                if (match) fileId = match[1];
-            } else if (url.includes('open?id=')) {
+                if (match) fileId = match[1];            } else if (url.includes('open?id=')) {
                 const match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
                 if (match) fileId = match[1];
-            } else if (url.includes('uc?id=')) {
+            } else if (url.includes('uc?id=') || url.includes('uc?export=view&id=')) {
                 const match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
                 if (match) fileId = match[1];
             }
