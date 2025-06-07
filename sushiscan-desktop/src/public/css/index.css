@@ -1090,27 +1090,6 @@ body {
 
 .chapter-error {
     text-align: center;
-    color: var(--accent-red);
-    padding: 60px 24px;
-    background: rgba(239, 68, 68, 0.1);
-    border-radius: 12px;
-    border: 1px solid rgba(239, 68, 68, 0.2);
-    font-weight: 500;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 16px;
-    margin: 40px 0;
-}
-
-.chapter-error::before {
-    content: '📖💥';
-    font-size: 48px;
-    margin-bottom: 12px;
-}
-
-.chapter-loading {
-    text-align: center;
     color: var(--text-muted);
     padding: 80px 24px;
     font-size: 18px;
@@ -1118,13 +1097,16 @@ body {
     flex-direction: column;
     align-items: center;
     gap: 16px;
+    margin: 40px 0;
+    background: var(--bg-tertiary);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
 }
 
-.chapter-loading::before {
-    content: '📖';
+.chapter-error::before {
+    content: '📖💥';
     font-size: 48px;
-    animation: pulse 2s infinite;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
 }
 
 /* Progress indicator for chapter loading */
@@ -1219,4 +1201,107 @@ body {
     background-position: center;
     background-size: 60px 60px;
     opacity: 1;
+}
+
+/* ========== IMAGE ERROR HANDLING ========== */
+.chapter-page-loader[title] {
+    cursor: help;
+    position: relative;
+}
+
+.chapter-page-loader[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    top: -40px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    white-space: nowrap;
+    box-shadow: var(--shadow-light);
+    z-index: 1000;
+    border: 1px solid var(--border-color);
+}
+
+.chapter-page-loader[title]:hover::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 6px solid var(--bg-tertiary);
+    z-index: 1001;
+}
+
+/* Improved loading state for chapter pages */
+.chapter-page-loader {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 24px;
+    z-index: 10;
+    background: rgba(0, 0, 0, 0.8);
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    transition: all 0.3s ease;
+}
+
+.chapter-page-loader:not([title]) {
+    animation: pulse 1.5s infinite;
+}
+
+/* Failed image indicator */
+.chapter-page-loader[style*="var(--accent-red)"] {
+    background: rgba(220, 38, 127, 0.2);
+    border: 2px solid var(--accent-red);
+    animation: none;
+}
+
+/* Loading retry indicator */
+.chapter-page-loader.retrying {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: translate(-50%, -50%) rotate(0deg); }
+    to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* Better error state for chapter viewer */
+.chapter-error {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 80px 24px;
+    font-size: 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    margin: 40px 0;
+    background: var(--bg-tertiary);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+}
+
+.chapter-error::before {
+    content: '📖💥';
+    font-size: 48px;
+    margin-bottom: 12px;
+}
+
+/* Fallback URL indicator */
+.chapter-page[data-fallback-used] .chapter-page-number::after {
+    content: ' ⚠️';
+    font-size: 10px;
+    opacity: 0.7;
 }
