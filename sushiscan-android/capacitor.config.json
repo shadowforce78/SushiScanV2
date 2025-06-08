@@ -1,0 +1,10 @@
+{
+  "appId": "com.saumondeluxe.sushiscan",
+  "appName": "Sushi Scan",
+  "webDir": "dist",
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": false
+    }
+  }
+}
