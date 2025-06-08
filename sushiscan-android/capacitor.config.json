@@ -18,6 +18,9 @@
     }
   },
   "server": {
-    "androidScheme": "https"
+    "androidScheme": "capacitor",
+    "allowNavigation": [
+      "https://api.saumondeluxe.com/*"
+    ]
   }
 }
