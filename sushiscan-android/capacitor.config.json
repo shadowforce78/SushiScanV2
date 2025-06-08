@@ -21,6 +21,10 @@
     "androidScheme": "capacitor",
     "allowNavigation": [
       "https://api.saumondeluxe.com/*"
-    ]
+    ],
+    "cleartext": true
+  },
+  "android": {
+    "allowMixedContent": true
   }
 }
