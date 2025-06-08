@@ -1,26 +1,36 @@
 {
-  "name": "capacitor-app",
+  "name": "sushiscan-desktop",
+  "productName": "sushiscan-desktop",
   "version": "1.0.0",
-  "description": "An Amazing Capacitor App",
-  "type": "module",
-  "keywords": [
-    "capacitor",
-    "mobile"
-  ],
+  "description": "My Electron application description",
+  "main": "src/index.js",
   "scripts": {
-    "start": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "start": "electron-forge start",
+    "package": "electron-forge package",
+    "make": "electron-forge make",
+    "publish": "electron-forge publish",
+    "lint": "echo \"No linting configured\""
   },
+  "keywords": [],
+  "author": {
+    "name": "SaumonDeLuxe",
+    "email": "planque.adam@gmail.com"
+  },
+  "license": "MIT",
   "dependencies": {
-    "@capacitor/core": "latest",
-    "@capacitor/camera": "latest",
-    "@capacitor/splash-screen": "latest"
+    "@capacitor/core": "^7.3.0",
+    "electron-squirrel-startup": "^1.0.1"
   },
   "devDependencies": {
-    "@capacitor/cli": "latest",
-    "vite": "^5.4.2"
-  },
-  "author": "",
-  "license": "ISC"
+    "@capacitor/cli": "^7.3.0",
+    "@electron-forge/cli": "^7.8.1",
+    "@electron-forge/maker-deb": "^7.8.1",
+    "@electron-forge/maker-rpm": "^7.8.1",
+    "@electron-forge/maker-squirrel": "^7.8.1",
+    "@electron-forge/maker-zip": "^7.8.1",
+    "@electron-forge/plugin-auto-unpack-natives": "^7.8.1",
+    "@electron-forge/plugin-fuses": "^7.8.1",
+    "@electron/fuses": "^1.8.0",
+    "electron": "36.4.0"
+  }
 }
