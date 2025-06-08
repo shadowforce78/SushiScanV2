@@ -84,10 +84,10 @@ const data = await httpRequest(API);
 
 ## Fonctions mises à jour
 
-- ✅ `getScansHomepage()` - Page d'accueil
-- ⏳ `fetchMangaDetails()` - Détails manga (à faire)
-- ⏳ `searchManga()` - Recherche (à faire)
-- ⏳ `fetchChapterData()` - Données chapitre (à faire)
+- ✅ `getScansHomepage()` - Page d'accueil (TERMINÉ)
+- ✅ `fetchMangaDetails()` - Détails manga (TERMINÉ)
+- ✅ `searchManga()` - Recherche (TERMINÉ)
+- ✅ `fetchChapterData()` - Données chapitre (TERMINÉ)
 
 ## Tests
 1. **Synchroniser :** `npm run cap:sync`

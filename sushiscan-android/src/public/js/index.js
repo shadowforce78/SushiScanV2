@@ -16,6 +16,45 @@ function closeWindow() {
     }
 }
 
+// Capacitor HTTP helper function to handle CORS issues for Android
+async function httpRequest(url, options = {}) {
+    const fetchOptions = {
+        method: options.method || 'GET',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'User-Agent': 'SushiScan-Mobile/1.0',
+            'Cache-Control': 'no-cache',
+            ...options.headers
+        },
+        ...options
+    };
+    
+    try {
+        console.log(`[HTTP] Making request to: ${url}`);
+        console.log(`[HTTP] Options:`, fetchOptions);
+        
+        const response = await fetch(url, fetchOptions);
+        
+        console.log(`[HTTP] Response status: ${response.status} ${response.statusText}`);
+        console.log(`[HTTP] Response headers:`, [...response.headers.entries()]);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log(`[HTTP] Request successful for: ${url}`);
+        console.log(`[HTTP] Response data type:`, typeof data);
+        
+        return data;
+    } catch (error) {
+        console.error(`[HTTP] Request failed for ${url}:`, error);
+        console.error(`[HTTP] Error details:`, error.message);
+        throw error;
+    }
+}
+
 async function getScansHomepage() {
     const API = 'https://api.saumondeluxe.com/scans/homepage';
 
@@ -23,12 +62,7 @@ async function getScansHomepage() {
     showLoadingState();
 
     try {
-        const response = await fetch(API);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
+        const data = await httpRequest(API);
         console.log('Scans Homepage Data:', data);
 
         // Clear loading state
@@ -111,13 +145,8 @@ async function fetchMangaDetails(title) {
     try {
         // Encode the title for URL
         const encodedTitle = encodeURIComponent(title);
-        const response = await fetch(`https://api.saumondeluxe.com/scans/manga/${encodedTitle}`);
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const mangaDetails = await response.json();
+        const url = `https://api.saumondeluxe.com/scans/manga/${encodedTitle}`;
+        const mangaDetails = await httpRequest(url);
         return mangaDetails;
     } catch (error) {
         console.error(`Error fetching manga details for "${title}":`, error);
@@ -250,13 +279,8 @@ async function searchManga(query) {
 
     try {
         const encodedQuery = encodeURIComponent(query.trim());
-        const response = await fetch(`https://api.saumondeluxe.com/scans/manga/search?title=${encodedQuery}`);
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const searchResults = await response.json();
+        const url = `https://api.saumondeluxe.com/scans/manga/search?title=${encodedQuery}`;
+        const searchResults = await httpRequest(url);
         return searchResults;
     } catch (error) {
         console.error('Error searching manga:', error);
@@ -850,13 +874,7 @@ async function fetchChapterData(title, scanName, chapterNumber) {
         const encodedChapterNumber = encodeURIComponent(chapterNumber);
 
         const url = `https://api.saumondeluxe.com/scans/chapter?title=${encodedTitle}&scan_name=${encodedScanName}&chapter_number=${encodedChapterNumber}`;
-        const response = await fetch(url);
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const chapterData = await response.json();
+        const chapterData = await httpRequest(url);
         return chapterData;
     } catch (error) {
         console.error(`Error fetching chapter data for "${title}" chapter ${chapterNumber}:`, error);
