@@ -1,0 +1,23 @@
+{
+  "appId": "com.saumondeluxe.sushiscan",
+  "appName": "Sushi Scan",
+  "webDir": "www",
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#0f0f0f",
+      "showSpinner": true,
+      "spinnerColor": "#ff6b35"
+    },
+    "StatusBar": {
+      "backgroundColor": "#0f0f0f",
+      "style": "LIGHT"
+    },
+    "App": {
+      "launchUrl": "index.html"
+    }
+  },
+  "server": {
+    "androidScheme": "https"
+  }
+}

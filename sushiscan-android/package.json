@@ -9,7 +9,13 @@
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "electron-forge publish",
-    "lint": "echo \"No linting configured\""
+    "lint": "echo \"No linting configured\"",
+    "build:web": "cpx \"src/public/**/*\" www/ --clean",
+    "cap:sync": "npm run build:web && npx cap sync",
+    "cap:run:android": "npm run cap:sync && npx cap run android",
+    "cap:open:android": "npx cap open android",
+    "android:dev": "npm run cap:sync && npx cap run android --livereload --external",
+    "android:build": "npm run cap:sync && npx cap build android"
   },
   "keywords": [],
   "author": {
@@ -18,7 +24,13 @@
   },
   "license": "MIT",
   "dependencies": {
+    "@capacitor/android": "^7.3.0",
+    "@capacitor/app": "^7.0.1",
     "@capacitor/core": "^7.3.0",
+    "@capacitor/haptics": "^7.0.1",
+    "@capacitor/network": "^7.0.1",
+    "@capacitor/splash-screen": "^7.0.1",
+    "@capacitor/status-bar": "^7.0.1",
     "electron-squirrel-startup": "^1.0.1"
   },
   "devDependencies": {
@@ -31,6 +43,7 @@
     "@electron-forge/plugin-auto-unpack-natives": "^7.8.1",
     "@electron-forge/plugin-fuses": "^7.8.1",
     "@electron/fuses": "^1.8.0",
+    "cpx2": "^8.0.0",
     "electron": "36.4.0"
   }
 }
