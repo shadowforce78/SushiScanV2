@@ -3,7 +3,8 @@
   "productName": "sushiscan-desktop",
   "version": "1.0.0",
   "description": "My Electron application description",
-  "main": "src/index.js",  "scripts": {
+  "main": "src/index.js",
+  "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make",
@@ -20,7 +21,8 @@
     "name": "SaumonDeLuxe",
     "email": "planque.adam@gmail.com"
   },
-  "license": "MIT",  "dependencies": {
+  "license": "MIT",
+  "dependencies": {
     "@capacitor/android": "^7.3.0",
     "@capacitor/core": "^7.3.0",
     "electron-squirrel-startup": "^1.0.1"
