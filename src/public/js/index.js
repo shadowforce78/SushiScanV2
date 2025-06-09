@@ -1017,6 +1017,23 @@ async function loadChapterPages(imageUrls) {
     const totalPages = imageUrls.length;
     let loadedPages = 0;
 
+    // Update progress function
+    const updateProgress = () => {
+        const progressPercent = (loadedPages / totalPages) * 100;
+        if (progressFill) progressFill.style.width = `${progressPercent}%`;
+        if (progressText) progressText.textContent = `${loadedPages}/${totalPages}`;
+
+        // Hide progress bar when all pages are loaded/failed
+        if (loadedPages === totalPages) {
+            setTimeout(() => {
+                const progressContainer = document.getElementById('chapterProgress');
+                if (progressContainer) {
+                    progressContainer.style.display = 'none';
+                }
+            }, 1000);
+        }
+    };
+
     // Create page elements
     imageUrls.forEach((imageUrl, index) => {
         const pageDiv = document.createElement('div');
@@ -1025,178 +1042,169 @@ async function loadChapterPages(imageUrls) {
             <div class="chapter-page-loader">⏳</div>
             <img class="chapter-page-image" 
                  alt="Page ${index + 1}" 
-                 style="opacity: 0;"
-                 crossorigin="anonymous">
+                 style="opacity: 0;">
             <div class="chapter-page-number">${index + 1}</div>
         `;
 
         const image = pageDiv.querySelector('.chapter-page-image');
-        const loader = pageDiv.querySelector('.chapter-page-loader');        // Function to try loading image with fallback URLs
-        const tryLoadImage = async (urls, urlIndex = 0) => {
-            if (urlIndex >= urls.length) {
-                // All URLs failed
-                console.error('All fallback URLs failed for image:', imageUrl);
+        const loader = pageDiv.querySelector('.chapter-page-loader');        // Function to try loading image with different URL formats
+        const tryLoadImage = async (url, attemptNumber = 1) => {
+            const fallbackUrls = getGoogleDriveFallbackUrls(url);
+            
+            if (attemptNumber > fallbackUrls.length) {
+                // All attempts failed
+                console.error(`All fallback methods failed for page ${index + 1}`);
                 loader.innerHTML = '❌';
                 loader.style.color = 'var(--accent-red)';
-                loader.title = 'Échec du chargement de l\'image - Toutes les méthodes ont échoué';
+                loader.title = 'Échec du chargement - Toutes les méthodes ont échoué';
                 loadedPages++;
                 updateProgress();
                 return;
             }
 
-            const currentUrl = urls[urlIndex];
-
-            // Add visual indicator if using fallback URL
-            if (urlIndex > 0) {
-                loader.classList.add('retrying');
-                loader.title = `Tentative ${urlIndex + 1}/${urls.length} - Utilisation d'une méthode alternative`;
-                pageDiv.setAttribute('data-fallback-used', urlIndex);
+            const currentUrl = fallbackUrls[attemptNumber - 1];
+            
+            // Add visual indicator for fallback attempts
+            if (attemptNumber > 1) {
+                loader.innerHTML = `⏳ (${attemptNumber}/${fallbackUrls.length})`;
+                loader.title = `Tentative ${attemptNumber}/${fallbackUrls.length}`;
             }
 
-            console.log(`Trying URL ${urlIndex + 1}/${urls.length} for page ${index + 1}:`, currentUrl);
+            console.log(`Trying method ${attemptNumber} for page ${index + 1}:`, currentUrl);
 
-            image.onload = () => {
-                console.log(`Successfully loaded page ${index + 1} with URL ${urlIndex + 1}/${urls.length}`);
-                loader.style.display = 'none';
-                loader.classList.remove('retrying');
-                image.style.opacity = '1';
+            // For Google thumbnail URLs, try direct loading first (they're more permissive)
+            if (currentUrl.includes('thumbnail') || currentUrl.includes('lh3.googleusercontent.com')) {
+                image.onload = () => {
+                    console.log(`Successfully loaded page ${index + 1} using method ${attemptNumber} (direct)`);
+                    loader.style.display = 'none';
+                    image.style.opacity = '1';
+                    loadedPages++;
+                    updateProgress();
+                };
 
-                // Add success indicator if fallback was used
-                if (urlIndex > 0) {
-                    console.info(`Page ${index + 1} loaded using fallback method ${urlIndex + 1}`);
-                }
+                image.onerror = () => {
+                    console.warn(`Direct method ${attemptNumber} failed for page ${index + 1}, trying next...`);
+                    setTimeout(() => tryLoadImage(url, attemptNumber + 1), 500);
+                };
 
-                loadedPages++;
-                updateProgress();
-            };
-
-            image.onerror = () => {
-                console.warn(`Failed to load page ${index + 1} with URL ${urlIndex + 1}/${urls.length}:`, currentUrl);
-                loader.classList.remove('retrying');
-
-                // Try next fallback URL after a short delay
-                setTimeout(() => tryLoadImage(urls, urlIndex + 1), 1000);
-            };
-
-            // Set source with a small delay to ensure proper error handling
-            setTimeout(() => {
                 image.src = currentUrl;
-            }, 100);
-        };
+                return;
+            }
 
-        const updateProgress = () => {
-            // Update progress
-            const progressPercent = (loadedPages / totalPages) * 100;
-            if (progressFill) progressFill.style.width = `${progressPercent}%`;
-            if (progressText) progressText.textContent = `${loadedPages}/${totalPages}`;
-
-            // Hide progress bar when all pages are loaded/failed
-            if (loadedPages === totalPages) {
-                setTimeout(() => {
-                    const progressContainer = document.getElementById('chapterProgress');
-                    if (progressContainer) {
-                        progressContainer.style.display = 'none';
+            // For other URLs, try fetch approach first
+            try {
+                const response = await fetch(currentUrl, {
+                    method: 'GET',
+                    mode: 'no-cors', // Changed to no-cors to avoid CORS issues
+                    credentials: 'omit',
+                    headers: {
+                        'Accept': 'image/*,*/*;q=0.8'
                     }
-                }, 1000);
+                });
+
+                // Since we're using no-cors, we can't check response.ok
+                // Just try to use the URL directly
+                image.onload = () => {
+                    console.log(`Successfully loaded page ${index + 1} using method ${attemptNumber} (fetch)`);
+                    loader.style.display = 'none';
+                    image.style.opacity = '1';
+                    loadedPages++;
+                    updateProgress();
+                };
+
+                image.onerror = () => {
+                    console.warn(`Fetch method ${attemptNumber} failed for page ${index + 1}, trying next...`);
+                    setTimeout(() => tryLoadImage(url, attemptNumber + 1), 500);
+                };
+
+                image.src = currentUrl;
+
+            } catch (error) {
+                console.warn(`Method ${attemptNumber} failed for page ${index + 1}:`, error.message);
+                
+                // Fallback to direct image loading for this attempt
+                image.onload = () => {
+                    console.log(`Successfully loaded page ${index + 1} using direct method ${attemptNumber}`);
+                    loader.style.display = 'none';
+                    image.style.opacity = '1';
+                    loadedPages++;
+                    updateProgress();
+                };
+
+                image.onerror = () => {
+                    console.warn(`All approaches failed for method ${attemptNumber}, trying next...`);
+                    setTimeout(() => tryLoadImage(url, attemptNumber + 1), 500);
+                };
+
+                image.src = currentUrl;
             }
         };
 
-        // Get fallback URLs and start loading
-        const fallbackUrls = getGoogleDriveFallbackUrls(imageUrl);
-        tryLoadImage(fallbackUrls);
+        // Start loading with first method
+        tryLoadImage(imageUrl);
 
         pagesContainer.appendChild(pageDiv);
     });
 }
 
-// Function to convert Google Drive URLs to direct image URLs with multiple fallback methods
-function convertGoogleDriveUrl(url) {
-    try {
-        // Check if it's a Google Drive URL
-        if (url.includes('drive.google.com')) {
-            // Extract file ID from various Google Drive URL formats
-            let fileId = null;
-
-
-
-            // Format: https://drive.google.com/open?id=FILE_ID
-            if (url.includes('open?id=')) {
-                const match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-                if (match) fileId = match[1];
-            }
-
-            // Format: https://drive.google.com/file/d/FILE_ID/view
-            else if (url.includes('/file/d/')) {
-                const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
-                if (match) fileId = match[1];
-            }
-            // Format: https://drive.google.com/uc?id=FILE_ID
-            else if (url.includes('uc?id=')) {
-                const match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-                if (match) fileId = match[1];
-            }
-
-            if (fileId) {
-                // Return the new Google Drive usercontent URL (current working method)
-                return `https://drive.usercontent.google.com/download?id=${fileId}&export=view&authuser=0`;
-            }
-        }
-
-        // Return original URL if not a Google Drive URL or couldn't extract ID
-        return url;
-    } catch (error) {
-        console.error('Error processing Google Drive URL:', error);
-        return url;
-    }
-}
-
-// Function to get multiple fallback URLs for Google Drive images
+// Function to generate fallback URLs for Google Drive images
 function getGoogleDriveFallbackUrls(url) {
     const fallbackUrls = [];
 
     try {
-        if (url.includes('drive.google.com')) {
-            let fileId = null;
-
-            // Extract file ID
+        // Extract file ID from the current URL
+        let fileId = null;
+        
+        if (url.includes('drive.usercontent.google.com')) {
+            const match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+            if (match) fileId = match[1];
+        } else if (url.includes('drive.google.com')) {
             if (url.includes('/file/d/')) {
                 const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
                 if (match) fileId = match[1];
-            } else if (url.includes('open?id=')) {
-                const match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-                if (match) fileId = match[1];
-            } else if (url.includes('uc?id=') || url.includes('uc?export=view&id=')) {
+            } else if (url.includes('id=')) {
                 const match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
                 if (match) fileId = match[1];
             }
-            if (fileId) {
-                // Primary method: New Google Drive usercontent URL (most reliable, highest quality)
-                fallbackUrls.push(`https://drive.usercontent.google.com/download?id=${fileId}&export=view&authuser=0`);
+        }
 
-                // Alternative method 1: Google User Content with high resolution (excellent for manga)
-                fallbackUrls.push(`https://lh3.googleusercontent.com/d/${fileId}=w2048-h2048`);
-
-                // Alternative method 2: Google User Content with very high resolution
-                fallbackUrls.push(`https://lh3.googleusercontent.com/d/${fileId}=w4096-h4096`);
-
-                // Alternative method 3: Different usercontent variations
-                fallbackUrls.push(`https://drive.usercontent.google.com/download?id=${fileId}&export=view`);
-
-                // Alternative method 4: Original method (deprecated but kept as fallback)
-                fallbackUrls.push(`https://drive.google.com/uc?export=view&id=${fileId}`);
-            }
+        if (fileId) {
+            // Method 1: Google UserContent very high resolution (most reliable for manga)
+            fallbackUrls.push(`https://lh3.googleusercontent.com/d/${fileId}=w4096-h4096`);
+            
+            // Method 2: Google UserContent high resolution
+            fallbackUrls.push(`https://lh3.googleusercontent.com/d/${fileId}=w2048-h2048`);
+            
+            // Method 3: Google UserContent default (often works when others fail)
+            fallbackUrls.push(`https://lh3.googleusercontent.com/d/${fileId}`);
+            
+            // Method 4: Direct Google Drive thumbnail (lower quality but more reliable)
+            fallbackUrls.push(`https://drive.google.com/thumbnail?id=${fileId}&sz=w2048-h2048`);
+            
+            // Method 5: Alternative thumbnail size
+            fallbackUrls.push(`https://drive.google.com/thumbnail?id=${fileId}&sz=w1024-h1024`);
+            
+            // Method 6: Original API URL (as fallback)
+            fallbackUrls.push(url);
+            
+            // Method 7: Alternative usercontent without parameters
+            fallbackUrls.push(`https://drive.usercontent.google.com/download?id=${fileId}`);
+            
+            // Method 8: Classic export (least likely to work but worth trying)
+            fallbackUrls.push(`https://drive.google.com/uc?export=view&id=${fileId}`);
+        } else {
+            // If we can't extract file ID, just use the original URL
+            fallbackUrls.push(url);
         }
     } catch (error) {
         console.error('Error generating fallback URLs:', error);
-    }
-
-    // If no Google Drive URLs could be generated, return the original
-    if (fallbackUrls.length === 0) {
         fallbackUrls.push(url);
     }
 
     return fallbackUrls;
 }
+
+
 
 function showChapterError(message) {
     const chapterViewer = document.getElementById('chapterViewer');
