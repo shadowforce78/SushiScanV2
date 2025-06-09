@@ -1,211 +1,9 @@
 // ===========================
-// OFFLINE CACHING SYSTEM - IndexedDB
+// INITIALIZATION
 // ===========================
 
-class MangaCacheDB {
-    constructor() {
-        this.dbName = 'SushiScanCache';
-        this.version = 1;
-        this.db = null;
-    }
-
-    async init() {
-        return new Promise((resolve, reject) => {
-            const request = indexedDB.open(this.dbName, this.version);
-            
-            request.onerror = () => reject(request.error);
-            request.onsuccess = () => {
-                this.db = request.result;
-                resolve(this.db);
-            };
-            
-            request.onupgradeneeded = (event) => {
-                const db = event.target.result;
-                
-                // Create image cache store
-                if (!db.objectStoreNames.contains('images')) {
-                    const imageStore = db.createObjectStore('images', { keyPath: 'id' });
-                    imageStore.createIndex('mangaTitle', 'mangaTitle', { unique: false });
-                    imageStore.createIndex('chapterNumber', 'chapterNumber', { unique: false });
-                    imageStore.createIndex('pageNumber', 'pageNumber', { unique: false });
-                    imageStore.createIndex('timestamp', 'timestamp', { unique: false });
-                }
-                
-                // Create metadata store
-                if (!db.objectStoreNames.contains('metadata')) {
-                    const metaStore = db.createObjectStore('metadata', { keyPath: 'key' });
-                }
-            };
-        });
-    }
-
-    async cacheImage(mangaTitle, scanName, chapterNumber, pageNumber, imageBlob, originalUrl, quality) {
-        if (!this.db) await this.init();
-        
-        const id = `${mangaTitle}_${scanName}_${chapterNumber}_${pageNumber}`;
-        const timestamp = Date.now();
-        
-        const imageData = {
-            id,
-            mangaTitle,
-            scanName,
-            chapterNumber: parseInt(chapterNumber),
-            pageNumber: parseInt(pageNumber),
-            imageBlob,
-            originalUrl,
-            quality: {
-                width: quality.width,
-                height: quality.height,
-                size: imageBlob.size
-            },
-            timestamp,
-            lastAccessed: timestamp
-        };
-
-        return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction(['images'], 'readwrite');
-            const store = transaction.objectStore('images');
-            const request = store.put(imageData);
-            
-            request.onsuccess = () => {
-                console.log(`✅ Cached image: ${id} (${quality.width}x${quality.height}, ${(imageBlob.size / 1024).toFixed(1)}KB)`);
-                resolve(request.result);
-            };
-            request.onerror = () => reject(request.error);
-        });
-    }
-
-    async getCachedImage(mangaTitle, scanName, chapterNumber, pageNumber) {
-        if (!this.db) await this.init();
-        
-        const id = `${mangaTitle}_${scanName}_${chapterNumber}_${pageNumber}`;
-        
-        return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction(['images'], 'readwrite');
-            const store = transaction.objectStore('images');
-            const request = store.get(id);
-            
-            request.onsuccess = () => {
-                const result = request.result;
-                if (result) {
-                    // Update last accessed timestamp
-                    result.lastAccessed = Date.now();
-                    store.put(result);
-                    console.log(`📁 Found cached image: ${id}`);
-                    resolve(result);
-                } else {
-                    resolve(null);
-                }
-            };
-            request.onerror = () => reject(request.error);
-        });
-    }
-
-    async getCachedChapter(mangaTitle, scanName, chapterNumber) {
-        if (!this.db) await this.init();
-        
-        return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction(['images'], 'readonly');
-            const store = transaction.objectStore('images');
-            const index = store.index('chapterNumber');
-            const request = index.getAll(parseInt(chapterNumber));
-            
-            request.onsuccess = () => {
-                const allImages = request.result;
-                const chapterImages = allImages.filter(img => 
-                    img.mangaTitle === mangaTitle && 
-                    img.scanName === scanName
-                );
-                
-                if (chapterImages.length > 0) {
-                    console.log(`📁 Found ${chapterImages.length} cached pages for chapter ${chapterNumber}`);
-                    resolve(chapterImages.sort((a, b) => a.pageNumber - b.pageNumber));
-                } else {
-                    resolve([]);
-                }
-            };
-            request.onerror = () => reject(request.error);
-        });
-    }
-
-    async cleanOldCache(maxAgeMs = 7 * 24 * 60 * 60 * 1000) { // 7 days default
-        if (!this.db) await this.init();
-        
-        const cutoffTime = Date.now() - maxAgeMs;
-        
-        return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction(['images'], 'readwrite');
-            const store = transaction.objectStore('images');
-            const request = store.openCursor();
-            
-            let deletedCount = 0;
-            
-            request.onsuccess = (event) => {
-                const cursor = event.target.result;
-                if (cursor) {
-                    if (cursor.value.lastAccessed < cutoffTime) {
-                        cursor.delete();
-                        deletedCount++;
-                    }
-                    cursor.continue();
-                } else {
-                    console.log(`🗑️ Cleaned ${deletedCount} old cached images`);
-                    resolve(deletedCount);
-                }
-            };
-            request.onerror = () => reject(request.error);
-        });
-    }
-
-    async getCacheStats() {
-        if (!this.db) await this.init();
-        
-        return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction(['images'], 'readonly');
-            const store = transaction.objectStore('images');
-            const request = store.getAll();
-            
-            request.onsuccess = () => {
-                const images = request.result;
-                const totalSize = images.reduce((sum, img) => sum + (img.imageBlob?.size || 0), 0);
-                const totalImages = images.length;
-                
-                const stats = {
-                    totalImages,
-                    totalSizeMB: (totalSize / (1024 * 1024)).toFixed(2),
-                    oldestTimestamp: images.length > 0 ? Math.min(...images.map(img => img.timestamp)) : null,
-                    newestTimestamp: images.length > 0 ? Math.max(...images.map(img => img.timestamp)) : null
-                };
-                
-                resolve(stats);
-            };
-            request.onerror = () => reject(request.error);
-        });
-    }
-}
-
-// Initialize cache system
-const mangaCache = new MangaCacheDB();
-
-// Initialize cache on page load
-document.addEventListener('DOMContentLoaded', async () => {
-    try {
-        await mangaCache.init();
-        console.log('📁 Cache system initialized');
-        
-        // Clean old cache on startup
-        await mangaCache.cleanOldCache();
-        
-        // Log cache stats
-        const stats = await mangaCache.getCacheStats();
-        console.log('📊 Cache stats:', stats);
-        
-        // Show cache management info
-        addCacheManagementUI();
-        
-    } catch (error) {
-        console.error('❌ Failed to initialize cache:', error);
-    }
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('📱 SushiScan application initialized');
 });
 
 // ===========================
@@ -1283,33 +1081,12 @@ async function loadChapterPages(imageUrls, chapterData) {
     const totalPages = imageUrls.length;
     let loadedPages = 0;
     
-    // Extract chapter metadata for caching
+    // Extract chapter metadata for logging
     const mangaTitle = chapterData?.manga_title || 'Unknown';
     const scanName = chapterData?.scan_name || 'Unknown';
     const chapterNumber = chapterData?.number || '1';
 
-    console.log(`📁 Loading chapter ${chapterNumber} of ${mangaTitle} (${scanName}) - ${totalPages} pages`);
-
-    // Check for cached chapter first
-    try {
-        const cachedChapter = await mangaCache.getCachedChapter(mangaTitle, scanName, chapterNumber);
-        if (cachedChapter.length > 0) {
-            console.log(`📁 Found ${cachedChapter.length} cached pages for this chapter`);
-            
-            // Load cached images first, then try to fill missing pages
-            for (let i = 0; i < totalPages; i++) {
-                const cachedPage = cachedChapter.find(page => page.pageNumber === (i + 1));
-                if (cachedPage) {
-                    loadCachedPage(i, cachedPage);
-                } else {
-                    loadOnlinePage(i, imageUrls[i]);
-                }
-            }
-            return;
-        }
-    } catch (error) {
-        console.error('❌ Error checking cache:', error);
-    }
+    console.log(`📖 Loading chapter ${chapterNumber} of ${mangaTitle} (${scanName}) - ${totalPages} pages`);
 
     // Update progress function
     const updateProgress = () => {
@@ -1328,60 +1105,17 @@ async function loadChapterPages(imageUrls, chapterData) {
         }
     };
 
-    // Function to load a cached page
-    function loadCachedPage(index, cachedData) {
+    // Function to load a page
+    function loadPage(index, imageUrl) {
         const pageDiv = document.createElement('div');
         pageDiv.className = 'chapter-page';
         pageDiv.innerHTML = `
-            <div class="chapter-page-loader">📁</div>
+            <div class="chapter-page-loader">⏳</div>
             <img class="chapter-page-image" 
                  alt="Page ${index + 1}" 
                  style="opacity: 0;">
             <div class="chapter-page-number">${index + 1}</div>
-            <div class="page-cache-indicator">OFFLINE</div>
         `;
-
-        const image = pageDiv.querySelector('.chapter-page-image');
-        const loader = pageDiv.querySelector('.chapter-page-loader');
-
-        // Create blob URL from cached data
-        const blobUrl = URL.createObjectURL(cachedData.imageBlob);
-        
-        image.onload = () => {
-            console.log(`📁 Loaded cached page ${index + 1} - Quality: ${image.naturalWidth}x${image.naturalHeight}`);
-            loader.style.display = 'none';
-            image.style.opacity = '1';
-            loadedPages++;
-            updateProgress();
-        };
-
-        image.onerror = () => {
-            console.warn(`❌ Failed to load cached page ${index + 1}, trying online...`);
-            // Remove cache indicator and try online
-            const cacheIndicator = pageDiv.querySelector('.page-cache-indicator');
-            if (cacheIndicator) cacheIndicator.remove();
-            loadOnlinePage(index, imageUrls[index], pageDiv);
-        };
-
-        image.src = blobUrl;
-        pagesContainer.appendChild(pageDiv);
-    }
-
-    // Function to load a page online
-    function loadOnlinePage(index, imageUrl, existingPageDiv = null) {
-        const pageDiv = existingPageDiv || document.createElement('div');
-        
-        if (!existingPageDiv) {
-            pageDiv.className = 'chapter-page';
-            pageDiv.innerHTML = `
-                <div class="chapter-page-loader">⏳</div>
-                <img class="chapter-page-image" 
-                     alt="Page ${index + 1}" 
-                     style="opacity: 0;">
-                <div class="chapter-page-number">${index + 1}</div>
-            `;
-            pagesContainer.appendChild(pageDiv);
-        }
 
         const image = pageDiv.querySelector('.chapter-page-image');
         const loader = pageDiv.querySelector('.chapter-page-loader');
@@ -1411,8 +1145,8 @@ async function loadChapterPages(imageUrls, chapterData) {
 
             console.log(`🔄 Trying method ${attemptNumber} for page ${index + 1}:`, currentUrl);
 
-            // Function to handle successful image load with caching
-            const handleSuccessfulLoad = async (imageElement, methodInfo) => {
+            // Function to handle successful image load
+            const handleSuccessfulLoad = (imageElement, methodInfo) => {
                 const width = imageElement.naturalWidth;
                 const height = imageElement.naturalHeight;
                 
@@ -1426,25 +1160,6 @@ async function loadChapterPages(imageUrls, chapterData) {
                 }
                 
                 console.log(`✅ Successfully loaded page ${index + 1} using ${methodInfo} - Quality: ${width}x${height}`);
-                
-                // Cache the successfully loaded image
-                try {
-                    const response = await fetch(currentUrl, { mode: 'no-cors' });
-                    if (response.ok || response.type === 'opaque') {
-                        const blob = await response.blob();
-                        await mangaCache.cacheImage(
-                            mangaTitle, 
-                            scanName, 
-                            chapterNumber, 
-                            index + 1, 
-                            blob, 
-                            currentUrl, 
-                            { width, height }
-                        );
-                    }
-                } catch (cacheError) {
-                    console.warn(`⚠️ Failed to cache page ${index + 1}:`, cacheError.message);
-                }
                 
                 loader.style.display = 'none';
                 imageElement.style.opacity = '1';
@@ -1496,11 +1211,14 @@ async function loadChapterPages(imageUrls, chapterData) {
 
         // Start loading with first method
         tryLoadImage(imageUrl);
+        
+        // Add page to container
+        pagesContainer.appendChild(pageDiv);
     }
 
-    // Load all pages online (no cache available)
+    // Load all pages
     imageUrls.forEach((imageUrl, index) => {
-        loadOnlinePage(index, imageUrl);
+        loadPage(index, imageUrl);
     });
 }
 
@@ -1592,168 +1310,6 @@ function getGoogleDriveFallbackUrls(url) {
 }
 
 // ===========================
-// CACHE MANAGEMENT FUNCTIONS
-// ===========================
-
-// Display cache statistics
-async function showCacheStats() {
-    try {
-        const stats = await mangaCache.getCacheStats();
-        
-        // Remove existing stats display
-        const existingStats = document.querySelector('.cache-stats');
-        if (existingStats) {
-            existingStats.remove();
-        }
-        
-        // Create stats display
-        const statsDiv = document.createElement('div');
-        statsDiv.className = 'cache-stats visible';
-        statsDiv.innerHTML = `
-            <div class="cache-stats-header">📁 Cache Statistics</div>
-            <div class="cache-stats-item">
-                <span>Images:</span>
-                <span>${stats.totalImages}</span>
-            </div>
-            <div class="cache-stats-item">
-                <span>Size:</span>
-                <span>${stats.totalSizeMB} MB</span>
-            </div>
-            <div class="cache-stats-item">
-                <span>Press 'C' to hide</span>
-                <span></span>
-            </div>
-        `;
-        
-        document.body.appendChild(statsDiv);
-        
-        // Auto-hide after 5 seconds
-        setTimeout(() => {
-            if (statsDiv) {
-                statsDiv.classList.remove('visible');
-                setTimeout(() => statsDiv.remove(), 300);
-            }
-        }, 5000);
-        
-    } catch (error) {
-        console.error('❌ Error showing cache stats:', error);
-    }
-}
-
-// Clear cache with confirmation
-async function clearCache() {
-    if (confirm('Are you sure you want to clear all cached manga pages? This will free up storage but you\'ll need to reload images when offline.')) {
-        try {
-            // Close the database connection first
-            if (mangaCache.db) {
-                mangaCache.db.close();
-                mangaCache.db = null;
-            }
-            
-            // Delete the database
-            const deleteRequest = indexedDB.deleteDatabase('SushiScanCache');
-            
-            deleteRequest.onsuccess = () => {
-                console.log('🗑️ Cache cleared successfully');
-                alert('Cache cleared successfully!');
-                
-                // Reinitialize the cache
-                mangaCache.init().then(() => {
-                    console.log('📁 Cache system reinitialized');
-                });
-            };
-            
-            deleteRequest.onerror = () => {
-                console.error('❌ Error clearing cache:', deleteRequest.error);
-                alert('Error clearing cache. Please try again.');
-            };
-            
-        } catch (error) {
-            console.error('❌ Error clearing cache:', error);
-            alert('Error clearing cache. Please try again.');
-        }
-    }
-}
-
-// Export cache data (for backup/debugging)
-async function exportCacheData() {
-    try {
-        const stats = await mangaCache.getCacheStats();
-        const exportData = {
-            exportDate: new Date().toISOString(),
-            stats,
-            note: 'This is metadata only - image blobs cannot be exported to JSON'
-        };
-        
-        const dataStr = JSON.stringify(exportData, null, 2);
-        const dataBlob = new Blob([dataStr], { type: 'application/json' });
-        
-        const url = URL.createObjectURL(dataBlob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `sushiscan-cache-export-${Date.now()}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        
-        console.log('📤 Cache data exported');
-        
-    } catch (error) {
-        console.error('❌ Error exporting cache data:', error);
-        alert('Error exporting cache data.');
-    }
-}
-
-// Keyboard shortcuts for cache management
-document.addEventListener('keydown', (event) => {
-    // Only handle shortcuts when not typing in input fields
-    if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
-        return;
-    }
-    
-    switch (event.key.toLowerCase()) {
-        case 'c':
-            if (event.ctrlKey || event.metaKey) {
-                return; // Don't interfere with Ctrl+C
-            }
-            event.preventDefault();
-            const existingStats = document.querySelector('.cache-stats');
-            if (existingStats) {
-                existingStats.classList.remove('visible');
-                setTimeout(() => existingStats.remove(), 300);
-            } else {
-                showCacheStats();
-            }
-            break;
-            
-        case 'delete':
-            if (event.ctrlKey && event.shiftKey) {
-                event.preventDefault();
-                clearCache();
-            }
-            break;
-            
-        case 'e':
-            if (event.ctrlKey && event.shiftKey) {
-                event.preventDefault();
-                exportCacheData();
-            }
-            break;
-    }
-});
-
-// Add cache management buttons to manga details (optional UI)
-function addCacheManagementUI() {
-    // This could be called to add cache management buttons to the UI
-    // For now, we'll rely on keyboard shortcuts
-    console.log('💡 Cache Management Shortcuts:');
-    console.log('  • Press "C" to toggle cache statistics');
-    console.log('  • Press Ctrl+Shift+Delete to clear cache');
-    console.log('  • Press Ctrl+Shift+E to export cache data');
-}
-
-// ===========================
 // ENHANCED ERROR HANDLING
 // ===========================
 
@@ -1764,14 +1320,4 @@ async function enhancedErrorHandler(promise, errorMessage) {
         console.error(errorMessage, error);
         alert(`${errorMessage}\n\nDetails: ${error.message}`);
     }
-}
-
-// Usage example:
-async function someAsyncFunction() {
-    await enhancedErrorHandler(
-        async () => {
-            // Some code that may throw
-        },
-        'An error occurred while performing the action'
-    );
 }
