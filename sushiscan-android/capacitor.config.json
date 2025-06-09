@@ -1,11 +1,11 @@
 {
-  "appId": "com.sushiscan.app",
-  "appName": "SushiScan",
-  "webDir": "www",
-  "bundledWebRuntime": false,
-  "plugins": {
-    "StatusBar": {
-      "style": "dark"
+    "appId": "com.sushiscan.app",
+    "appName": "Sushi Scan",
+    "webDir": "www",
+    "bundledWebRuntime": false,
+    "plugins": {
+        "StatusBar": {
+            "style": "dark"
+        }
     }
-  }
 }
