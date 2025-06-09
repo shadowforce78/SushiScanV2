@@ -3,21 +3,25 @@
   "productName": "sushiscan-desktop",
   "version": "1.0.0",
   "description": "My Electron application description",
-  "main": "src/index.js",
-  "scripts": {
+  "main": "src/index.js",  "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "electron-forge publish",
-    "lint": "echo \"No linting configured\""
+    "lint": "echo \"No linting configured\"",
+    "build": "echo \"Build completed - files are ready in www directory\"",
+    "cap:add": "npx cap add android",
+    "cap:sync": "npx cap sync",
+    "cap:open": "npx cap open android",
+    "cap:run": "npx cap run android"
   },
   "keywords": [],
   "author": {
     "name": "SaumonDeLuxe",
     "email": "planque.adam@gmail.com"
   },
-  "license": "MIT",
-  "dependencies": {
+  "license": "MIT",  "dependencies": {
+    "@capacitor/android": "^7.3.0",
     "@capacitor/core": "^7.3.0",
     "electron-squirrel-startup": "^1.0.1"
   },
