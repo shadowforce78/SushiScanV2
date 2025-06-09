@@ -90,3 +90,19 @@ typings/
 
 # Electron-Forge
 out/
+
+# Capacitor
+android/app/src/main/assets/public
+
+# Android
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+android/.idea/
+android/*.iml
+
+# iOS (si ajouté plus tard)
+ios/App/build/
+ios/App/Pods/
+ios/App/*.xcworkspace/xcuserdata/
