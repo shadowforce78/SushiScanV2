@@ -1,19 +1,19 @@
-// Capacitor initialization
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize Capacitor if available
-    if (window.Capacitor) {
-        import('https://unpkg.com/@capacitor/core@latest/dist/capacitor.js').then(() => {
-            console.log('Capacitor initialized');
-        });
+function minimizeWindow() {
+    // Code to minimize the window
+    if (window.electronAPI) {
+        window.electronAPI.minimizeWindow();
+    } else {
+        console.error('Electron API not ready. Please ensure the preload script is properly configured.');
     }
-    
-    // Initialize the app
-    initializeApp();
-});
+}
 
-function initializeApp() {
-    // Load homepage data when the app starts
-    getScansHomepage();
+function closeWindow() {
+    // Code to close the window
+    if (window.electronAPI) {
+        window.electronAPI.closeWindow();
+    } else {
+        console.error('Electron API not ready. Please ensure the preload script is properly configured.');
+    }
 }
 
 async function getScansHomepage() {
