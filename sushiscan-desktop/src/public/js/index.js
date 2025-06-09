@@ -1117,14 +1117,17 @@ function convertGoogleDriveUrl(url) {
             // Extract file ID from various Google Drive URL formats
             let fileId = null;
 
-            // Format: https://drive.google.com/file/d/FILE_ID/view
-            if (url.includes('/file/d/')) {
-                const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+
+
+            // Format: https://drive.google.com/open?id=FILE_ID
+            if (url.includes('open?id=')) {
+                const match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
                 if (match) fileId = match[1];
             }
-            // Format: https://drive.google.com/open?id=FILE_ID
-            else if (url.includes('open?id=')) {
-                const match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+
+            // Format: https://drive.google.com/file/d/FILE_ID/view
+            else if (url.includes('/file/d/')) {
+                const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
                 if (match) fileId = match[1];
             }
             // Format: https://drive.google.com/uc?id=FILE_ID
