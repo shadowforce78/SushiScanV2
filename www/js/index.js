@@ -1070,12 +1070,17 @@ async function loadChapterPages(imageUrls) {
                 loader.title = `Tentative ${attemptNumber}/${fallbackUrls.length}`;
             }
 
-            console.log(`Trying method ${attemptNumber} for page ${index + 1}:`, currentUrl);
-
-            // For Google thumbnail URLs, try direct loading first (they're more permissive)
+            console.log(`Trying method ${attemptNumber} for page ${index + 1}:`, currentUrl);            // For Google thumbnail URLs, try direct loading first (they're more permissive)
             if (currentUrl.includes('thumbnail') || currentUrl.includes('lh3.googleusercontent.com')) {
                 image.onload = () => {
-                    console.log(`Successfully loaded page ${index + 1} using method ${attemptNumber} (direct)`);
+                    // Check image quality - if too small, try next method
+                    if (image.naturalWidth > 0 && image.naturalWidth < 300) {
+                        console.warn(`Page ${index + 1} method ${attemptNumber} loaded but quality too low (${image.naturalWidth}x${image.naturalHeight}), trying next...`);
+                        setTimeout(() => tryLoadImage(url, attemptNumber + 1), 200);
+                        return;
+                    }
+                    
+                    console.log(`Successfully loaded page ${index + 1} using method ${attemptNumber} (direct) - Quality: ${image.naturalWidth}x${image.naturalHeight}`);
                     loader.style.display = 'none';
                     image.style.opacity = '1';
                     loadedPages++;
@@ -1100,12 +1105,17 @@ async function loadChapterPages(imageUrls) {
                     headers: {
                         'Accept': 'image/*,*/*;q=0.8'
                     }
-                });
-
-                // Since we're using no-cors, we can't check response.ok
+                });                // Since we're using no-cors, we can't check response.ok
                 // Just try to use the URL directly
                 image.onload = () => {
-                    console.log(`Successfully loaded page ${index + 1} using method ${attemptNumber} (fetch)`);
+                    // Check image quality - if too small, try next method
+                    if (image.naturalWidth > 0 && image.naturalWidth < 300) {
+                        console.warn(`Page ${index + 1} method ${attemptNumber} loaded but quality too low (${image.naturalWidth}x${image.naturalHeight}), trying next...`);
+                        setTimeout(() => tryLoadImage(url, attemptNumber + 1), 200);
+                        return;
+                    }
+                    
+                    console.log(`Successfully loaded page ${index + 1} using method ${attemptNumber} (fetch) - Quality: ${image.naturalWidth}x${image.naturalHeight}`);
                     loader.style.display = 'none';
                     image.style.opacity = '1';
                     loadedPages++;
@@ -1121,10 +1131,16 @@ async function loadChapterPages(imageUrls) {
 
             } catch (error) {
                 console.warn(`Method ${attemptNumber} failed for page ${index + 1}:`, error.message);
-                
-                // Fallback to direct image loading for this attempt
+                  // Fallback to direct image loading for this attempt
                 image.onload = () => {
-                    console.log(`Successfully loaded page ${index + 1} using direct method ${attemptNumber}`);
+                    // Check image quality - if too small, try next method
+                    if (image.naturalWidth > 0 && image.naturalWidth < 300) {
+                        console.warn(`Page ${index + 1} method ${attemptNumber} loaded but quality too low (${image.naturalWidth}x${image.naturalHeight}), trying next...`);
+                        setTimeout(() => tryLoadImage(url, attemptNumber + 1), 200);
+                        return;
+                    }
+                    
+                    console.log(`Successfully loaded page ${index + 1} using direct method ${attemptNumber} - Quality: ${image.naturalWidth}x${image.naturalHeight}`);
                     loader.style.display = 'none';
                     image.style.opacity = '1';
                     loadedPages++;
@@ -1166,33 +1182,31 @@ function getGoogleDriveFallbackUrls(url) {
                 const match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
                 if (match) fileId = match[1];
             }
-        }
-
-        if (fileId) {
-            // Method 1: Google UserContent very high resolution (most reliable for manga)
-            fallbackUrls.push(`https://lh3.googleusercontent.com/d/${fileId}=w4096-h4096`);
-            
-            // Method 2: Google UserContent high resolution
-            fallbackUrls.push(`https://lh3.googleusercontent.com/d/${fileId}=w2048-h2048`);
-            
-            // Method 3: Google UserContent default (often works when others fail)
-            fallbackUrls.push(`https://lh3.googleusercontent.com/d/${fileId}`);
-            
-            // Method 4: Direct Google Drive thumbnail (lower quality but more reliable)
-            fallbackUrls.push(`https://drive.google.com/thumbnail?id=${fileId}&sz=w2048-h2048`);
-            
-            // Method 5: Alternative thumbnail size
-            fallbackUrls.push(`https://drive.google.com/thumbnail?id=${fileId}&sz=w1024-h1024`);
-            
-            // Method 6: Original API URL (as fallback)
+        }        if (fileId) {
+            // Method 1: Original API URL (usually highest quality when it works)
             fallbackUrls.push(url);
             
-            // Method 7: Alternative usercontent without parameters
+            // Method 2: Google UserContent default (often gives best quality without compression)
+            fallbackUrls.push(`https://lh3.googleusercontent.com/d/${fileId}`);
+            
+            // Method 3: Alternative usercontent without parameters (high quality fallback)
             fallbackUrls.push(`https://drive.usercontent.google.com/download?id=${fileId}`);
             
-            // Method 8: Classic export (least likely to work but worth trying)
+            // Method 4: Google UserContent very high resolution (for when default fails)
+            fallbackUrls.push(`https://lh3.googleusercontent.com/d/${fileId}=w4096-h4096`);
+            
+            // Method 5: Google UserContent high resolution (good balance)
+            fallbackUrls.push(`https://lh3.googleusercontent.com/d/${fileId}=w2048-h2048`);
+            
+            // Method 6: Google Drive thumbnail high resolution (reliable but lower quality)
+            fallbackUrls.push(`https://drive.google.com/thumbnail?id=${fileId}&sz=w2048-h2048`);
+            
+            // Method 7: Google Drive thumbnail medium resolution
+            fallbackUrls.push(`https://drive.google.com/thumbnail?id=${fileId}&sz=w1024-h1024`);
+            
+            // Method 8: Classic export (last resort)
             fallbackUrls.push(`https://drive.google.com/uc?export=view&id=${fileId}`);
-        } else {
+        }else {
             // If we can't extract file ID, just use the original URL
             fallbackUrls.push(url);
         }
