@@ -1,3 +1,217 @@
+// ===========================
+// OFFLINE CACHING SYSTEM - IndexedDB
+// ===========================
+
+class MangaCacheDB {
+    constructor() {
+        this.dbName = 'SushiScanCache';
+        this.version = 1;
+        this.db = null;
+    }
+
+    async init() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(this.dbName, this.version);
+            
+            request.onerror = () => reject(request.error);
+            request.onsuccess = () => {
+                this.db = request.result;
+                resolve(this.db);
+            };
+            
+            request.onupgradeneeded = (event) => {
+                const db = event.target.result;
+                
+                // Create image cache store
+                if (!db.objectStoreNames.contains('images')) {
+                    const imageStore = db.createObjectStore('images', { keyPath: 'id' });
+                    imageStore.createIndex('mangaTitle', 'mangaTitle', { unique: false });
+                    imageStore.createIndex('chapterNumber', 'chapterNumber', { unique: false });
+                    imageStore.createIndex('pageNumber', 'pageNumber', { unique: false });
+                    imageStore.createIndex('timestamp', 'timestamp', { unique: false });
+                }
+                
+                // Create metadata store
+                if (!db.objectStoreNames.contains('metadata')) {
+                    const metaStore = db.createObjectStore('metadata', { keyPath: 'key' });
+                }
+            };
+        });
+    }
+
+    async cacheImage(mangaTitle, scanName, chapterNumber, pageNumber, imageBlob, originalUrl, quality) {
+        if (!this.db) await this.init();
+        
+        const id = `${mangaTitle}_${scanName}_${chapterNumber}_${pageNumber}`;
+        const timestamp = Date.now();
+        
+        const imageData = {
+            id,
+            mangaTitle,
+            scanName,
+            chapterNumber: parseInt(chapterNumber),
+            pageNumber: parseInt(pageNumber),
+            imageBlob,
+            originalUrl,
+            quality: {
+                width: quality.width,
+                height: quality.height,
+                size: imageBlob.size
+            },
+            timestamp,
+            lastAccessed: timestamp
+        };
+
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['images'], 'readwrite');
+            const store = transaction.objectStore('images');
+            const request = store.put(imageData);
+            
+            request.onsuccess = () => {
+                console.log(`✅ Cached image: ${id} (${quality.width}x${quality.height}, ${(imageBlob.size / 1024).toFixed(1)}KB)`);
+                resolve(request.result);
+            };
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    async getCachedImage(mangaTitle, scanName, chapterNumber, pageNumber) {
+        if (!this.db) await this.init();
+        
+        const id = `${mangaTitle}_${scanName}_${chapterNumber}_${pageNumber}`;
+        
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['images'], 'readwrite');
+            const store = transaction.objectStore('images');
+            const request = store.get(id);
+            
+            request.onsuccess = () => {
+                const result = request.result;
+                if (result) {
+                    // Update last accessed timestamp
+                    result.lastAccessed = Date.now();
+                    store.put(result);
+                    console.log(`📁 Found cached image: ${id}`);
+                    resolve(result);
+                } else {
+                    resolve(null);
+                }
+            };
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    async getCachedChapter(mangaTitle, scanName, chapterNumber) {
+        if (!this.db) await this.init();
+        
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['images'], 'readonly');
+            const store = transaction.objectStore('images');
+            const index = store.index('chapterNumber');
+            const request = index.getAll(parseInt(chapterNumber));
+            
+            request.onsuccess = () => {
+                const allImages = request.result;
+                const chapterImages = allImages.filter(img => 
+                    img.mangaTitle === mangaTitle && 
+                    img.scanName === scanName
+                );
+                
+                if (chapterImages.length > 0) {
+                    console.log(`📁 Found ${chapterImages.length} cached pages for chapter ${chapterNumber}`);
+                    resolve(chapterImages.sort((a, b) => a.pageNumber - b.pageNumber));
+                } else {
+                    resolve([]);
+                }
+            };
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    async cleanOldCache(maxAgeMs = 7 * 24 * 60 * 60 * 1000) { // 7 days default
+        if (!this.db) await this.init();
+        
+        const cutoffTime = Date.now() - maxAgeMs;
+        
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['images'], 'readwrite');
+            const store = transaction.objectStore('images');
+            const request = store.openCursor();
+            
+            let deletedCount = 0;
+            
+            request.onsuccess = (event) => {
+                const cursor = event.target.result;
+                if (cursor) {
+                    if (cursor.value.lastAccessed < cutoffTime) {
+                        cursor.delete();
+                        deletedCount++;
+                    }
+                    cursor.continue();
+                } else {
+                    console.log(`🗑️ Cleaned ${deletedCount} old cached images`);
+                    resolve(deletedCount);
+                }
+            };
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    async getCacheStats() {
+        if (!this.db) await this.init();
+        
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['images'], 'readonly');
+            const store = transaction.objectStore('images');
+            const request = store.getAll();
+            
+            request.onsuccess = () => {
+                const images = request.result;
+                const totalSize = images.reduce((sum, img) => sum + (img.imageBlob?.size || 0), 0);
+                const totalImages = images.length;
+                
+                const stats = {
+                    totalImages,
+                    totalSizeMB: (totalSize / (1024 * 1024)).toFixed(2),
+                    oldestTimestamp: images.length > 0 ? Math.min(...images.map(img => img.timestamp)) : null,
+                    newestTimestamp: images.length > 0 ? Math.max(...images.map(img => img.timestamp)) : null
+                };
+                
+                resolve(stats);
+            };
+            request.onerror = () => reject(request.error);
+        });
+    }
+}
+
+// Initialize cache system
+const mangaCache = new MangaCacheDB();
+
+// Initialize cache on page load
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        await mangaCache.init();
+        console.log('📁 Cache system initialized');
+        
+        // Clean old cache on startup
+        await mangaCache.cleanOldCache();
+        
+        // Log cache stats
+        const stats = await mangaCache.getCacheStats();
+        console.log('📊 Cache stats:', stats);
+        
+        // Show cache management info
+        addCacheManagementUI();
+        
+    } catch (error) {
+        console.error('❌ Failed to initialize cache:', error);
+    }
+});
+
+// ===========================
+// WINDOW CONTROLS
+// ===========================
+
 function minimizeWindow() {
     // Code to minimize the window
     if (window.electronAPI) {
@@ -15,6 +229,10 @@ function closeWindow() {
         console.error('Electron API not ready. Please ensure the preload script is properly configured.');
     }
 }
+
+// ===========================
+// API FUNCTIONS
+// ===========================
 
 async function getScansHomepage() {
     const API = 'https://api.saumondeluxe.com/scans/homepage';
@@ -598,9 +816,11 @@ function hideAllContent() {
     const searchSection = document.querySelector('.search-section');
     const searchResults = document.getElementById('searchResults');
     const homepageSections = document.querySelectorAll('.section:not(.search-section):not(#searchResults)');
+    const mangaDetails = document.getElementById('mangaDetails');
 
     if (searchSection) searchSection.style.display = 'none';
     if (searchResults) searchResults.style.display = 'none';
+    if (mangaDetails) mangaDetails.style.display = 'none';
     homepageSections.forEach(section => {
         section.style.display = 'none';
     });
@@ -611,9 +831,11 @@ function showAllContent() {
     const searchSection = document.querySelector('.search-section');
     const mangaDetails = document.getElementById('mangaDetails');
     const homepageSections = document.querySelectorAll('.section:not(.search-section):not(#searchResults)');
+    const searchResults = document.getElementById('searchResults');
 
     if (searchSection) searchSection.style.display = 'block';
     if (mangaDetails) mangaDetails.style.display = 'none';
+    if (searchResults) searchResults.style.display = 'none';
     homepageSections.forEach(section => {
         section.style.display = 'block';
     });
@@ -640,6 +862,7 @@ function showMangaDetailsLoading() {
 function displayMangaDetails(manga) {
     const mangaDetails = document.getElementById('mangaDetails');
     if (!mangaDetails) return;
+    
     // Format the updated date
     const updatedDate = manga.updated_at ?
         new Date(manga.updated_at).toLocaleDateString('fr-FR', {
@@ -664,13 +887,15 @@ function displayMangaDetails(manga) {
                 <div class="manga-image-loader">⏳</div>
                 <img class="manga-main-image" alt="${manga.title || 'Manga cover'}" style="opacity: 0;">
             </div>
-              <div class="manga-info-section">
+            
+            <div class="manga-info-section">
                 <div class="manga-meta-grid">
                     <div class="meta-item">
                         <div class="meta-label">Chapitres</div>
                         <div class="meta-value">${manga.total_chapters || 'Non spécifié'}</div>
                     </div>
-                      <div class="meta-item">
+                    
+                    <div class="meta-item">
                         <div class="meta-label">Types</div>
                         <div class="meta-value">${manga.type ? (Array.isArray(manga.type) ? manga.type.join(', ') : manga.type) : 'Non spécifié'}</div>
                     </div>
@@ -680,7 +905,8 @@ function displayMangaDetails(manga) {
                         <div class="meta-value updated-date">${updatedDate}</div>
                     </div>
                 </div>
-                  <div class="meta-item">
+                
+                <div class="meta-item">
                     <div class="meta-label">Genres</div>
                     <div class="manga-genres-detailed">
                         ${manga.genres && Array.isArray(manga.genres) && manga.genres.length > 0 ?
@@ -688,7 +914,8 @@ function displayMangaDetails(manga) {
             '<span class="meta-value">Aucun genre spécifié</span>'}
                     </div>
                 </div>
-                  <div class="meta-item">
+                
+                <div class="meta-item">
                     <div class="meta-label">Langues disponibles</div>
                     <div class="manga-languages">
                         ${manga.language && Array.isArray(manga.language) && manga.language.length > 0 ?
@@ -696,7 +923,8 @@ function displayMangaDetails(manga) {
             '<span class="meta-value">Non spécifié</span>'}
                     </div>
                 </div>
-                  ${manga.scan_types && Array.isArray(manga.scan_types) && manga.scan_types.length > 0 ? `
+                
+                ${manga.scan_types && Array.isArray(manga.scan_types) && manga.scan_types.length > 0 ? `
                 <div class="manga-scan-types">
                     <div class="scan-types-header">
                         📚 Types de scans disponibles
@@ -986,7 +1214,7 @@ async function displayChapter(chapterData) {
 
     // Load chapter pages
     if (chapterData.image_urls && chapterData.image_urls.length > 0) {
-        await loadChapterPages(chapterData.image_urls);
+        await loadChapterPages(chapterData.image_urls, chapterData);
     } else {
         showChapterError('Aucune page disponible pour ce chapitre');
     }
@@ -1006,219 +1234,6 @@ async function navigateToChapter(direction, currentTitle, currentScanName, curre
     console.log(`Navigating to chapter ${newChapterNumber}`);
     await showChapterViewer(currentTitle, currentScanName, newChapterNumber.toString());
 }
-
-async function loadChapterPages(imageUrls) {
-    const pagesContainer = document.getElementById('chapterPages');
-    const progressFill = document.getElementById('chapterProgressFill');
-    const progressText = document.getElementById('chapterProgressText');
-
-    if (!pagesContainer) return;
-
-    const totalPages = imageUrls.length;
-    let loadedPages = 0;
-
-    // Update progress function
-    const updateProgress = () => {
-        const progressPercent = (loadedPages / totalPages) * 100;
-        if (progressFill) progressFill.style.width = `${progressPercent}%`;
-        if (progressText) progressText.textContent = `${loadedPages}/${totalPages}`;
-
-        // Hide progress bar when all pages are loaded/failed
-        if (loadedPages === totalPages) {
-            setTimeout(() => {
-                const progressContainer = document.getElementById('chapterProgress');
-                if (progressContainer) {
-                    progressContainer.style.display = 'none';
-                }
-            }, 1000);
-        }
-    };
-
-    // Create page elements
-    imageUrls.forEach((imageUrl, index) => {
-        const pageDiv = document.createElement('div');
-        pageDiv.className = 'chapter-page';
-        pageDiv.innerHTML = `
-            <div class="chapter-page-loader">⏳</div>
-            <img class="chapter-page-image" 
-                 alt="Page ${index + 1}" 
-                 style="opacity: 0;">
-            <div class="chapter-page-number">${index + 1}</div>
-        `;
-
-        const image = pageDiv.querySelector('.chapter-page-image');
-        const loader = pageDiv.querySelector('.chapter-page-loader');        // Function to try loading image with different URL formats
-        const tryLoadImage = async (url, attemptNumber = 1) => {
-            const fallbackUrls = getGoogleDriveFallbackUrls(url);
-            
-            if (attemptNumber > fallbackUrls.length) {
-                // All attempts failed
-                console.error(`All fallback methods failed for page ${index + 1}`);
-                loader.innerHTML = '❌';
-                loader.style.color = 'var(--accent-red)';
-                loader.title = 'Échec du chargement - Toutes les méthodes ont échoué';
-                loadedPages++;
-                updateProgress();
-                return;
-            }
-
-            const currentUrl = fallbackUrls[attemptNumber - 1];
-            
-            // Add visual indicator for fallback attempts
-            if (attemptNumber > 1) {
-                loader.innerHTML = `⏳ (${attemptNumber}/${fallbackUrls.length})`;
-                loader.title = `Tentative ${attemptNumber}/${fallbackUrls.length}`;
-            }
-
-            console.log(`Trying method ${attemptNumber} for page ${index + 1}:`, currentUrl);            // For Google thumbnail URLs, try direct loading first (they're more permissive)
-            if (currentUrl.includes('thumbnail') || currentUrl.includes('lh3.googleusercontent.com')) {
-                image.onload = () => {
-                    // Check image quality - if too small, try next method
-                    if (image.naturalWidth > 0 && image.naturalWidth < 300) {
-                        console.warn(`Page ${index + 1} method ${attemptNumber} loaded but quality too low (${image.naturalWidth}x${image.naturalHeight}), trying next...`);
-                        setTimeout(() => tryLoadImage(url, attemptNumber + 1), 200);
-                        return;
-                    }
-                    
-                    console.log(`Successfully loaded page ${index + 1} using method ${attemptNumber} (direct) - Quality: ${image.naturalWidth}x${image.naturalHeight}`);
-                    loader.style.display = 'none';
-                    image.style.opacity = '1';
-                    loadedPages++;
-                    updateProgress();
-                };
-
-                image.onerror = () => {
-                    console.warn(`Direct method ${attemptNumber} failed for page ${index + 1}, trying next...`);
-                    setTimeout(() => tryLoadImage(url, attemptNumber + 1), 500);
-                };
-
-                image.src = currentUrl;
-                return;
-            }
-
-            // For other URLs, try fetch approach first
-            try {
-                const response = await fetch(currentUrl, {
-                    method: 'GET',
-                    mode: 'no-cors', // Changed to no-cors to avoid CORS issues
-                    credentials: 'omit',
-                    headers: {
-                        'Accept': 'image/*,*/*;q=0.8'
-                    }
-                });                // Since we're using no-cors, we can't check response.ok
-                // Just try to use the URL directly
-                image.onload = () => {
-                    // Check image quality - if too small, try next method
-                    if (image.naturalWidth > 0 && image.naturalWidth < 300) {
-                        console.warn(`Page ${index + 1} method ${attemptNumber} loaded but quality too low (${image.naturalWidth}x${image.naturalHeight}), trying next...`);
-                        setTimeout(() => tryLoadImage(url, attemptNumber + 1), 200);
-                        return;
-                    }
-                    
-                    console.log(`Successfully loaded page ${index + 1} using method ${attemptNumber} (fetch) - Quality: ${image.naturalWidth}x${image.naturalHeight}`);
-                    loader.style.display = 'none';
-                    image.style.opacity = '1';
-                    loadedPages++;
-                    updateProgress();
-                };
-
-                image.onerror = () => {
-                    console.warn(`Fetch method ${attemptNumber} failed for page ${index + 1}, trying next...`);
-                    setTimeout(() => tryLoadImage(url, attemptNumber + 1), 500);
-                };
-
-                image.src = currentUrl;
-
-            } catch (error) {
-                console.warn(`Method ${attemptNumber} failed for page ${index + 1}:`, error.message);
-                  // Fallback to direct image loading for this attempt
-                image.onload = () => {
-                    // Check image quality - if too small, try next method
-                    if (image.naturalWidth > 0 && image.naturalWidth < 300) {
-                        console.warn(`Page ${index + 1} method ${attemptNumber} loaded but quality too low (${image.naturalWidth}x${image.naturalHeight}), trying next...`);
-                        setTimeout(() => tryLoadImage(url, attemptNumber + 1), 200);
-                        return;
-                    }
-                    
-                    console.log(`Successfully loaded page ${index + 1} using direct method ${attemptNumber} - Quality: ${image.naturalWidth}x${image.naturalHeight}`);
-                    loader.style.display = 'none';
-                    image.style.opacity = '1';
-                    loadedPages++;
-                    updateProgress();
-                };
-
-                image.onerror = () => {
-                    console.warn(`All approaches failed for method ${attemptNumber}, trying next...`);
-                    setTimeout(() => tryLoadImage(url, attemptNumber + 1), 500);
-                };
-
-                image.src = currentUrl;
-            }
-        };
-
-        // Start loading with first method
-        tryLoadImage(imageUrl);
-
-        pagesContainer.appendChild(pageDiv);
-    });
-}
-
-// Function to generate fallback URLs for Google Drive images
-function getGoogleDriveFallbackUrls(url) {
-    const fallbackUrls = [];
-
-    try {
-        // Extract file ID from the current URL
-        let fileId = null;
-        
-        if (url.includes('drive.usercontent.google.com')) {
-            const match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-            if (match) fileId = match[1];
-        } else if (url.includes('drive.google.com')) {
-            if (url.includes('/file/d/')) {
-                const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
-                if (match) fileId = match[1];
-            } else if (url.includes('id=')) {
-                const match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-                if (match) fileId = match[1];
-            }
-        }        if (fileId) {
-            // Method 1: Original API URL (usually highest quality when it works)
-            fallbackUrls.push(url);
-            
-            // Method 2: Google UserContent default (often gives best quality without compression)
-            fallbackUrls.push(`https://lh3.googleusercontent.com/d/${fileId}`);
-            
-            // Method 3: Alternative usercontent without parameters (high quality fallback)
-            fallbackUrls.push(`https://drive.usercontent.google.com/download?id=${fileId}`);
-            
-            // Method 4: Google UserContent very high resolution (for when default fails)
-            fallbackUrls.push(`https://lh3.googleusercontent.com/d/${fileId}=w4096-h4096`);
-            
-            // Method 5: Google UserContent high resolution (good balance)
-            fallbackUrls.push(`https://lh3.googleusercontent.com/d/${fileId}=w2048-h2048`);
-            
-            // Method 6: Google Drive thumbnail high resolution (reliable but lower quality)
-            fallbackUrls.push(`https://drive.google.com/thumbnail?id=${fileId}&sz=w2048-h2048`);
-            
-            // Method 7: Google Drive thumbnail medium resolution
-            fallbackUrls.push(`https://drive.google.com/thumbnail?id=${fileId}&sz=w1024-h1024`);
-            
-            // Method 8: Classic export (last resort)
-            fallbackUrls.push(`https://drive.google.com/uc?export=view&id=${fileId}`);
-        }else {
-            // If we can't extract file ID, just use the original URL
-            fallbackUrls.push(url);
-        }
-    } catch (error) {
-        console.error('Error generating fallback URLs:', error);
-        fallbackUrls.push(url);
-    }
-
-    return fallbackUrls;
-}
-
-
 
 function showChapterError(message) {
     const chapterViewer = document.getElementById('chapterViewer');
@@ -1254,4 +1269,509 @@ function backToMangaFromChapter() {
     if (mangaDetails) {
         mangaDetails.style.display = 'block';
     }
+}
+
+// ========== PAGE LOADING AND RENDERING ========== 
+
+async function loadChapterPages(imageUrls, chapterData) {
+    const pagesContainer = document.getElementById('chapterPages');
+    const progressFill = document.getElementById('chapterProgressFill');
+    const progressText = document.getElementById('chapterProgressText');
+
+    if (!pagesContainer) return;
+
+    const totalPages = imageUrls.length;
+    let loadedPages = 0;
+    
+    // Extract chapter metadata for caching
+    const mangaTitle = chapterData?.manga_title || 'Unknown';
+    const scanName = chapterData?.scan_name || 'Unknown';
+    const chapterNumber = chapterData?.number || '1';
+
+    console.log(`📁 Loading chapter ${chapterNumber} of ${mangaTitle} (${scanName}) - ${totalPages} pages`);
+
+    // Check for cached chapter first
+    try {
+        const cachedChapter = await mangaCache.getCachedChapter(mangaTitle, scanName, chapterNumber);
+        if (cachedChapter.length > 0) {
+            console.log(`📁 Found ${cachedChapter.length} cached pages for this chapter`);
+            
+            // Load cached images first, then try to fill missing pages
+            for (let i = 0; i < totalPages; i++) {
+                const cachedPage = cachedChapter.find(page => page.pageNumber === (i + 1));
+                if (cachedPage) {
+                    loadCachedPage(i, cachedPage);
+                } else {
+                    loadOnlinePage(i, imageUrls[i]);
+                }
+            }
+            return;
+        }
+    } catch (error) {
+        console.error('❌ Error checking cache:', error);
+    }
+
+    // Update progress function
+    const updateProgress = () => {
+        const progressPercent = (loadedPages / totalPages) * 100;
+        if (progressFill) progressFill.style.width = `${progressPercent}%`;
+        if (progressText) progressText.textContent = `${loadedPages}/${totalPages}`;
+
+        // Hide progress bar when all pages are loaded/failed
+        if (loadedPages === totalPages) {
+            setTimeout(() => {
+                const progressContainer = document.getElementById('chapterProgress');
+                if (progressContainer) {
+                    progressContainer.style.display = 'none';
+                }
+            }, 1000);
+        }
+    };
+
+    // Function to load a cached page
+    function loadCachedPage(index, cachedData) {
+        const pageDiv = document.createElement('div');
+        pageDiv.className = 'chapter-page';
+        pageDiv.innerHTML = `
+            <div class="chapter-page-loader">📁</div>
+            <img class="chapter-page-image" 
+                 alt="Page ${index + 1}" 
+                 style="opacity: 0;">
+            <div class="chapter-page-number">${index + 1}</div>
+            <div class="page-cache-indicator">OFFLINE</div>
+        `;
+
+        const image = pageDiv.querySelector('.chapter-page-image');
+        const loader = pageDiv.querySelector('.chapter-page-loader');
+
+        // Create blob URL from cached data
+        const blobUrl = URL.createObjectURL(cachedData.imageBlob);
+        
+        image.onload = () => {
+            console.log(`📁 Loaded cached page ${index + 1} - Quality: ${image.naturalWidth}x${image.naturalHeight}`);
+            loader.style.display = 'none';
+            image.style.opacity = '1';
+            loadedPages++;
+            updateProgress();
+        };
+
+        image.onerror = () => {
+            console.warn(`❌ Failed to load cached page ${index + 1}, trying online...`);
+            // Remove cache indicator and try online
+            const cacheIndicator = pageDiv.querySelector('.page-cache-indicator');
+            if (cacheIndicator) cacheIndicator.remove();
+            loadOnlinePage(index, imageUrls[index], pageDiv);
+        };
+
+        image.src = blobUrl;
+        pagesContainer.appendChild(pageDiv);
+    }
+
+    // Function to load a page online
+    function loadOnlinePage(index, imageUrl, existingPageDiv = null) {
+        const pageDiv = existingPageDiv || document.createElement('div');
+        
+        if (!existingPageDiv) {
+            pageDiv.className = 'chapter-page';
+            pageDiv.innerHTML = `
+                <div class="chapter-page-loader">⏳</div>
+                <img class="chapter-page-image" 
+                     alt="Page ${index + 1}" 
+                     style="opacity: 0;">
+                <div class="chapter-page-number">${index + 1}</div>
+            `;
+            pagesContainer.appendChild(pageDiv);
+        }
+
+        const image = pageDiv.querySelector('.chapter-page-image');
+        const loader = pageDiv.querySelector('.chapter-page-loader');
+
+        // Function to try loading image with different URL formats
+        const tryLoadImage = async (url, attemptNumber = 1) => {
+            const fallbackUrls = getGoogleDriveFallbackUrls(url);
+            
+            if (attemptNumber > fallbackUrls.length) {
+                // All attempts failed
+                console.error(`❌ All fallback methods failed for page ${index + 1}`);
+                loader.innerHTML = '❌';
+                loader.style.color = 'var(--accent-red)';
+                loader.title = 'Échec du chargement - Toutes les méthodes ont échoué';
+                loadedPages++;
+                updateProgress();
+                return;
+            }
+
+            const currentUrl = fallbackUrls[attemptNumber - 1];
+            
+            // Add visual indicator for fallback attempts
+            if (attemptNumber > 1) {
+                loader.innerHTML = `⏳ (${attemptNumber}/${fallbackUrls.length})`;
+                loader.title = `Tentative ${attemptNumber}/${fallbackUrls.length}`;
+            }
+
+            console.log(`🔄 Trying method ${attemptNumber} for page ${index + 1}:`, currentUrl);
+
+            // Function to handle successful image load with caching
+            const handleSuccessfulLoad = async (imageElement, methodInfo) => {
+                const width = imageElement.naturalWidth;
+                const height = imageElement.naturalHeight;
+                
+                // Improved quality detection for manga pages
+                const isQualityAcceptable = checkImageQuality(width, height, index + 1);
+                
+                if (!isQualityAcceptable) {
+                    console.warn(`📏 Page ${index + 1} method ${attemptNumber} quality check failed (${width}x${height}), trying next...`);
+                    setTimeout(() => tryLoadImage(url, attemptNumber + 1), 200);
+                    return;
+                }
+                
+                console.log(`✅ Successfully loaded page ${index + 1} using ${methodInfo} - Quality: ${width}x${height}`);
+                
+                // Cache the successfully loaded image
+                try {
+                    const response = await fetch(currentUrl, { mode: 'no-cors' });
+                    if (response.ok || response.type === 'opaque') {
+                        const blob = await response.blob();
+                        await mangaCache.cacheImage(
+                            mangaTitle, 
+                            scanName, 
+                            chapterNumber, 
+                            index + 1, 
+                            blob, 
+                            currentUrl, 
+                            { width, height }
+                        );
+                    }
+                } catch (cacheError) {
+                    console.warn(`⚠️ Failed to cache page ${index + 1}:`, cacheError.message);
+                }
+                
+                loader.style.display = 'none';
+                imageElement.style.opacity = '1';
+                loadedPages++;
+                updateProgress();
+            };
+
+            // For Google thumbnail URLs, try direct loading first (they're more permissive)
+            if (currentUrl.includes('thumbnail') || currentUrl.includes('lh3.googleusercontent.com')) {
+                image.onload = () => handleSuccessfulLoad(image, `method ${attemptNumber} (direct)`);
+                image.onerror = () => {
+                    console.warn(`❌ Direct method ${attemptNumber} failed for page ${index + 1}, trying next...`);
+                    setTimeout(() => tryLoadImage(url, attemptNumber + 1), 500);
+                };
+                image.src = currentUrl;
+                return;
+            }
+
+            // For other URLs, try fetch approach first
+            try {
+                const response = await fetch(currentUrl, {
+                    method: 'GET',
+                    mode: 'no-cors',
+                    credentials: 'omit',
+                    headers: {
+                        'Accept': 'image/*,*/*;q=0.8'
+                    }
+                });
+
+                image.onload = () => handleSuccessfulLoad(image, `method ${attemptNumber} (fetch)`);
+                image.onerror = () => {
+                    console.warn(`❌ Fetch method ${attemptNumber} failed for page ${index + 1}, trying next...`);
+                    setTimeout(() => tryLoadImage(url, attemptNumber + 1), 500);
+                };
+                image.src = currentUrl;
+
+            } catch (error) {
+                console.warn(`❌ Method ${attemptNumber} failed for page ${index + 1}:`, error.message);
+                
+                // Fallback to direct image loading for this attempt
+                image.onload = () => handleSuccessfulLoad(image, `direct method ${attemptNumber}`);
+                image.onerror = () => {
+                    console.warn(`❌ All approaches failed for method ${attemptNumber}, trying next...`);
+                    setTimeout(() => tryLoadImage(url, attemptNumber + 1), 500);
+                };
+                image.src = currentUrl;
+            }
+        };
+
+        // Start loading with first method
+        tryLoadImage(imageUrl);
+    }
+
+    // Load all pages online (no cache available)
+    imageUrls.forEach((imageUrl, index) => {
+        loadOnlinePage(index, imageUrl);
+    });
+}
+
+// Improved quality detection function for manga pages
+function checkImageQuality(width, height, pageNumber) {
+    // Manga pages can be tall and narrow, so we need different criteria
+    
+    // Reject if clearly too small (thumbnails)
+    if (width < 200 && height < 200) {
+        console.warn(`📏 Page ${pageNumber}: Too small (${width}x${height}) - likely thumbnail`);
+        return false;
+    }
+    
+    // For tall images (typical manga pages), be more lenient with width
+    if (height > width * 2) { // Tall image (height > 2x width)
+        if (width < 150) {
+            console.warn(`📏 Page ${pageNumber}: Tall image too narrow (${width}x${height})`);
+            return false;
+        }
+        console.log(`📏 Page ${pageNumber}: Tall manga page accepted (${width}x${height})`);
+        return true;
+    }
+    
+    // For normal aspect ratio images, use stricter width requirements
+    if (width < 300) {
+        console.warn(`📏 Page ${pageNumber}: Normal image too narrow (${width}x${height})`);
+        return false;
+    }
+    
+    console.log(`📏 Page ${pageNumber}: Normal image accepted (${width}x${height})`);
+    return true;
+}
+
+// Function to generate fallback URLs for Google Drive images
+function getGoogleDriveFallbackUrls(url) {
+    const fallbackUrls = [];
+
+    try {
+        // Extract file ID from the current URL
+        let fileId = null;
+        
+        if (url.includes('drive.usercontent.google.com')) {
+            const match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+            if (match) fileId = match[1];
+        } else if (url.includes('drive.google.com')) {
+            if (url.includes('/file/d/')) {
+                const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+                if (match) fileId = match[1];
+            } else if (url.includes('id=')) {
+                const match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+                if (match) fileId = match[1];
+            }
+        }
+
+        if (fileId) {
+            // Method 1: Original API URL (usually highest quality when it works)
+            fallbackUrls.push(url);
+            
+            // Method 2: Google UserContent default (often gives best quality without compression)
+            fallbackUrls.push(`https://lh3.googleusercontent.com/d/${fileId}`);
+            
+            // Method 3: Alternative usercontent without parameters (high quality fallback)
+            fallbackUrls.push(`https://drive.usercontent.google.com/download?id=${fileId}`);
+            
+            // Method 4: Google UserContent very high resolution (for when default fails)
+            fallbackUrls.push(`https://lh3.googleusercontent.com/d/${fileId}=w4096-h4096`);
+            
+            // Method 5: Google UserContent high resolution (good balance)
+            fallbackUrls.push(`https://lh3.googleusercontent.com/d/${fileId}=w2048-h2048`);
+            
+            // Method 6: Google Drive thumbnail high resolution (reliable but lower quality)
+            fallbackUrls.push(`https://drive.google.com/thumbnail?id=${fileId}&sz=w2048-h2048`);
+            
+            // Method 7: Google Drive thumbnail medium resolution
+            fallbackUrls.push(`https://drive.google.com/thumbnail?id=${fileId}&sz=w1024-h1024`);
+            
+            // Method 8: Classic export (last resort)
+            fallbackUrls.push(`https://drive.google.com/uc?export=view&id=${fileId}`);
+        } else {
+            // If we can't extract file ID, just use the original URL
+            fallbackUrls.push(url);
+        }
+    } catch (error) {
+        console.error('Error generating fallback URLs:', error);
+        fallbackUrls.push(url);
+    }
+
+    return fallbackUrls;
+}
+
+// ===========================
+// CACHE MANAGEMENT FUNCTIONS
+// ===========================
+
+// Display cache statistics
+async function showCacheStats() {
+    try {
+        const stats = await mangaCache.getCacheStats();
+        
+        // Remove existing stats display
+        const existingStats = document.querySelector('.cache-stats');
+        if (existingStats) {
+            existingStats.remove();
+        }
+        
+        // Create stats display
+        const statsDiv = document.createElement('div');
+        statsDiv.className = 'cache-stats visible';
+        statsDiv.innerHTML = `
+            <div class="cache-stats-header">📁 Cache Statistics</div>
+            <div class="cache-stats-item">
+                <span>Images:</span>
+                <span>${stats.totalImages}</span>
+            </div>
+            <div class="cache-stats-item">
+                <span>Size:</span>
+                <span>${stats.totalSizeMB} MB</span>
+            </div>
+            <div class="cache-stats-item">
+                <span>Press 'C' to hide</span>
+                <span></span>
+            </div>
+        `;
+        
+        document.body.appendChild(statsDiv);
+        
+        // Auto-hide after 5 seconds
+        setTimeout(() => {
+            if (statsDiv) {
+                statsDiv.classList.remove('visible');
+                setTimeout(() => statsDiv.remove(), 300);
+            }
+        }, 5000);
+        
+    } catch (error) {
+        console.error('❌ Error showing cache stats:', error);
+    }
+}
+
+// Clear cache with confirmation
+async function clearCache() {
+    if (confirm('Are you sure you want to clear all cached manga pages? This will free up storage but you\'ll need to reload images when offline.')) {
+        try {
+            // Close the database connection first
+            if (mangaCache.db) {
+                mangaCache.db.close();
+                mangaCache.db = null;
+            }
+            
+            // Delete the database
+            const deleteRequest = indexedDB.deleteDatabase('SushiScanCache');
+            
+            deleteRequest.onsuccess = () => {
+                console.log('🗑️ Cache cleared successfully');
+                alert('Cache cleared successfully!');
+                
+                // Reinitialize the cache
+                mangaCache.init().then(() => {
+                    console.log('📁 Cache system reinitialized');
+                });
+            };
+            
+            deleteRequest.onerror = () => {
+                console.error('❌ Error clearing cache:', deleteRequest.error);
+                alert('Error clearing cache. Please try again.');
+            };
+            
+        } catch (error) {
+            console.error('❌ Error clearing cache:', error);
+            alert('Error clearing cache. Please try again.');
+        }
+    }
+}
+
+// Export cache data (for backup/debugging)
+async function exportCacheData() {
+    try {
+        const stats = await mangaCache.getCacheStats();
+        const exportData = {
+            exportDate: new Date().toISOString(),
+            stats,
+            note: 'This is metadata only - image blobs cannot be exported to JSON'
+        };
+        
+        const dataStr = JSON.stringify(exportData, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        
+        const url = URL.createObjectURL(dataBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `sushiscan-cache-export-${Date.now()}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        console.log('📤 Cache data exported');
+        
+    } catch (error) {
+        console.error('❌ Error exporting cache data:', error);
+        alert('Error exporting cache data.');
+    }
+}
+
+// Keyboard shortcuts for cache management
+document.addEventListener('keydown', (event) => {
+    // Only handle shortcuts when not typing in input fields
+    if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+        return;
+    }
+    
+    switch (event.key.toLowerCase()) {
+        case 'c':
+            if (event.ctrlKey || event.metaKey) {
+                return; // Don't interfere with Ctrl+C
+            }
+            event.preventDefault();
+            const existingStats = document.querySelector('.cache-stats');
+            if (existingStats) {
+                existingStats.classList.remove('visible');
+                setTimeout(() => existingStats.remove(), 300);
+            } else {
+                showCacheStats();
+            }
+            break;
+            
+        case 'delete':
+            if (event.ctrlKey && event.shiftKey) {
+                event.preventDefault();
+                clearCache();
+            }
+            break;
+            
+        case 'e':
+            if (event.ctrlKey && event.shiftKey) {
+                event.preventDefault();
+                exportCacheData();
+            }
+            break;
+    }
+});
+
+// Add cache management buttons to manga details (optional UI)
+function addCacheManagementUI() {
+    // This could be called to add cache management buttons to the UI
+    // For now, we'll rely on keyboard shortcuts
+    console.log('💡 Cache Management Shortcuts:');
+    console.log('  • Press "C" to toggle cache statistics');
+    console.log('  • Press Ctrl+Shift+Delete to clear cache');
+    console.log('  • Press Ctrl+Shift+E to export cache data');
+}
+
+// ===========================
+// ENHANCED ERROR HANDLING
+// ===========================
+
+async function enhancedErrorHandler(promise, errorMessage) {
+    try {
+        await promise;
+    } catch (error) {
+        console.error(errorMessage, error);
+        alert(`${errorMessage}\n\nDetails: ${error.message}`);
+    }
+}
+
+// Usage example:
+async function someAsyncFunction() {
+    await enhancedErrorHandler(
+        async () => {
+            // Some code that may throw
+        },
+        'An error occurred while performing the action'
+    );
 }
