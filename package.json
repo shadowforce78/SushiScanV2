@@ -3,18 +3,22 @@
   "productName": "sushiscan-desktop",
   "version": "1.0.0",
   "description": "My Electron application description",
-  "main": "src/index.js",  "scripts": {
+  "main": "src/index.js",
+  "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "electron-forge publish",
     "lint": "echo \"No linting configured\"",
     "build": "xcopy \"src\\public\\*\" \"www\\\" /E /I /Y",
-    "cap:add": "npx cap add android",
+    "cap:add-android": "npx cap add android",
+    "cap:add-ios": "npx cap add ios",
     "cap:sync": "npm run build && npx cap sync",
-    "cap:open": "npx cap open android",
-    "cap:run": "npm run build && npx cap run android",
-    "cap:build": "npm run build && npx cap sync && npx cap build android"
+    "cap:open-android": "npx cap open android",
+    "cap:open-ios": "npx cap open ios",
+    "cap:run-android": "npm run build && npx cap run android",
+    "cap:run-ios": "npm run build && npx cap run ios",
+    "cap:build": "npm run build && npx cap sync && npx cap build android && npx cap build ios"
   },
   "keywords": [],
   "author": {
@@ -25,6 +29,7 @@
   "dependencies": {
     "@capacitor/android": "^7.3.0",
     "@capacitor/core": "^7.3.0",
+    "@capacitor/ios": "^7.3.0",
     "electron-squirrel-startup": "^1.0.1"
   },
   "devDependencies": {
