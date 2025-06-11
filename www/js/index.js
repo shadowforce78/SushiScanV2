@@ -660,7 +660,7 @@ function showMangaDetailsLoading() {
 function displayMangaDetails(manga) {
     const mangaDetails = document.getElementById('mangaDetails');
     if (!mangaDetails) return;
-    
+
     // Format the updated date
     const updatedDate = manga.updated_at ?
         new Date(manga.updated_at).toLocaleDateString('fr-FR', {
@@ -1080,7 +1080,7 @@ async function loadChapterPages(imageUrls, chapterData) {
 
     const totalPages = imageUrls.length;
     let loadedPages = 0;
-    
+
     // Extract chapter metadata for logging
     const mangaTitle = chapterData?.manga_title || 'Unknown';
     const scanName = chapterData?.scan_name || 'Unknown';
@@ -1116,20 +1116,19 @@ async function loadChapterPages(imageUrls, chapterData) {
         `;
 
         const image = pageDiv.querySelector('.chapter-page-image');
-        const loader = pageDiv.querySelector('.chapter-page-loader');
-
-        // Get all possible Google Drive URLs
+        const loader = pageDiv.querySelector('.chapter-page-loader');        // Get all possible Google Drive URLs
         const fallbackUrls = getGoogleDriveFallbackUrls(imageUrl);
         let currentAttempt = 0;
+        let imageTimeout = null;
 
-        // Function to try the next URL
+        // Function to try the next URL with mobile-friendly delays
         const tryNextUrl = () => {
             if (currentAttempt >= fallbackUrls.length) {
                 // All URLs failed
                 console.error(`❌ All fallback URLs failed for page ${index + 1}`);
                 loader.innerHTML = '❌';
                 loader.style.color = 'var(--accent-red)';
-                loader.title = 'Échec du chargement de l\'image';
+                loader.title = 'Échec du chargement - Vérifiez votre connexion';
                 loadedPages++;
                 updateProgress();
                 return;
@@ -1141,25 +1140,34 @@ async function loadChapterPages(imageUrls, chapterData) {
             // Update loader with attempt info
             if (currentAttempt > 1) {
                 loader.innerHTML = `⏳ (${currentAttempt}/${fallbackUrls.length})`;
-                loader.title = `Tentative ${currentAttempt}/${fallbackUrls.length}`;
+                loader.title = `Tentative ${currentAttempt}/${fallbackUrls.length} - Patientez...`;
             }
 
             console.log(`🔄 Loading page ${index + 1} with URL ${currentAttempt}/${fallbackUrls.length}:`, currentUrl);
 
-            // Set up image handlers
+            // Clear any existing timeout
+            if (imageTimeout) {
+                clearTimeout(imageTimeout);
+                imageTimeout = null;
+            }            // Set up image handlers with longer timeout for mobile
             image.onload = () => {
+                if (imageTimeout) {
+                    clearTimeout(imageTimeout);
+                    imageTimeout = null;
+                }
+
                 const width = image.naturalWidth;
                 const height = image.naturalHeight;
-                
+
                 // Check image quality
                 if (!checkImageQuality(width, height, index + 1)) {
-                    console.warn(`📏 Page ${index + 1} quality too low (${width}x${height}), trying next URL...`);
-                    tryNextUrl();
+                    console.warn(`📏 Page ${index + 1} quality too low (${width}x${height}), trying next URL in 1s...`);
+                    setTimeout(() => tryNextUrl(), 1000); // 1 second delay for quality issues
                     return;
                 }
-                
+
                 console.log(`✅ Page ${index + 1} loaded successfully - Quality: ${width}x${height}`);
-                
+
                 // Show the image
                 loader.style.display = 'none';
                 image.style.display = 'block';
@@ -1169,17 +1177,41 @@ async function loadChapterPages(imageUrls, chapterData) {
             };
 
             image.onerror = () => {
+                if (imageTimeout) {
+                    clearTimeout(imageTimeout);
+                    imageTimeout = null;
+                }
                 console.warn(`❌ Failed to load page ${index + 1} with URL ${currentAttempt}/${fallbackUrls.length}, trying next...`);
                 tryNextUrl();
             };
+
+            // Set a very generous timeout for mobile networks (25 seconds)
+            imageTimeout = setTimeout(() => {
+                console.warn(`⏰ Timeout loading page ${index + 1} with URL ${currentAttempt}/${fallbackUrls.length}, trying next...`);
+                image.onload = null;
+                image.onerror = null;
+                tryNextUrl();
+            }, 25000);
+
+            // Try different approaches based on URL type
+            if (currentUrl.includes('lh3.googleusercontent.com')) {
+                // For lh3 URLs, try with crossorigin attribute
+                image.crossOrigin = "anonymous";
+                image.referrerPolicy = "no-referrer";
+                console.log(`🔧 Setting crossOrigin for lh3 URL: ${currentUrl}`);
+            } else {
+                // For other URLs, remove crossorigin
+                image.removeAttribute('crossOrigin');
+                image.removeAttribute('referrerPolicy');
+            }
 
             // Set the image source directly
             image.src = currentUrl;
         };
 
-        // Start loading
-        tryNextUrl();
-        
+        // Start loading with initial delay for mobile (500ms)
+        setTimeout(() => tryNextUrl(), 500);
+
         // Add page to container
         pagesContainer.appendChild(pageDiv);
     }
@@ -1193,13 +1225,13 @@ async function loadChapterPages(imageUrls, chapterData) {
 // Improved quality detection function for manga pages
 function checkImageQuality(width, height, pageNumber) {
     // Manga pages can be tall and narrow, so we need different criteria
-    
+
     // Reject if clearly too small (thumbnails)
     if (width < 200 && height < 200) {
         console.warn(`📏 Page ${pageNumber}: Too small (${width}x${height}) - likely thumbnail`);
         return false;
     }
-    
+
     // For tall images (typical manga pages), be more lenient with width
     if (height > width * 2) { // Tall image (height > 2x width)
         if (width < 150) {
@@ -1209,13 +1241,13 @@ function checkImageQuality(width, height, pageNumber) {
         console.log(`📏 Page ${pageNumber}: Tall manga page accepted (${width}x${height})`);
         return true;
     }
-    
+
     // For normal aspect ratio images, use stricter width requirements
     if (width < 300) {
         console.warn(`📏 Page ${pageNumber}: Normal image too narrow (${width}x${height})`);
         return false;
     }
-    
+
     console.log(`📏 Page ${pageNumber}: Normal image accepted (${width}x${height})`);
     return true;
 }
@@ -1223,11 +1255,16 @@ function checkImageQuality(width, height, pageNumber) {
 // Function to generate optimized Google Drive URLs for direct image display
 function getGoogleDriveFallbackUrls(url) {
     const fallbackUrls = [];
+    
+    // Detect if running in Capacitor (mobile app)
+    const isMobile = typeof window !== 'undefined' && 
+                    (window.Capacitor || 
+                     /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
 
     try {
         // Extract file ID from the current URL
         let fileId = null;
-        
+
         if (url.includes('drive.usercontent.google.com')) {
             const match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
             if (match) fileId = match[1];
@@ -1239,31 +1276,29 @@ function getGoogleDriveFallbackUrls(url) {
                 const match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
                 if (match) fileId = match[1];
             }
-        }
-
-        if (fileId) {
-            // Prioritize URLs that work best for direct image display
+        }        if (fileId) {
+            // Mobile-optimized URLs that work better with Capacitor
             
-            // Method 1: Google UserContent without size limit (best quality, most compatible)
-            fallbackUrls.push(`https://lh3.googleusercontent.com/d/${fileId}`);
-            
-            // Method 2: Google UserContent very high resolution (for large manga pages)
-            fallbackUrls.push(`https://lh3.googleusercontent.com/d/${fileId}=w4096-h4096`);
-            
-            // Method 3: Google Drive direct download (original API URL)
-            fallbackUrls.push(`https://drive.usercontent.google.com/download?id=${fileId}&export=view`);
-            
-            // Method 4: Google UserContent high resolution (good balance)
-            fallbackUrls.push(`https://lh3.googleusercontent.com/d/${fileId}=w2048-h2048`);
-            
-            // Method 5: Google Drive thumbnail high resolution (very reliable)
+            // Method 1: Drive thumbnail (most reliable on mobile)
             fallbackUrls.push(`https://drive.google.com/thumbnail?id=${fileId}&sz=w2048-h2048`);
             
-            // Method 6: Classic Google Drive view (works in most cases)
+            // Method 2: Drive thumbnail medium (backup)
+            fallbackUrls.push(`https://drive.google.com/thumbnail?id=${fileId}&sz=w1024-h1024`);
+            
+            // Method 3: Google UserContent without size limit (sometimes works)
+            fallbackUrls.push(`https://lh3.googleusercontent.com/d/${fileId}`);
+            
+            // Method 4: Classic Google Drive view (mobile-friendly)
             fallbackUrls.push(`https://drive.google.com/uc?export=view&id=${fileId}`);
             
-            // Method 7: Google Drive thumbnail medium resolution (fallback)
-            fallbackUrls.push(`https://drive.google.com/thumbnail?id=${fileId}&sz=w1024-h1024`);
+            // Method 5: Google UserContent high resolution 
+            fallbackUrls.push(`https://lh3.googleusercontent.com/d/${fileId}=w2048-h2048`);
+            
+            // Method 6: Google UserContent very high resolution
+            fallbackUrls.push(`https://lh3.googleusercontent.com/d/${fileId}=w4096-h4096`);
+            
+            // Method 7: Google Drive direct download 
+            fallbackUrls.push(`https://drive.usercontent.google.com/download?id=${fileId}&export=view`);
             
             // Method 8: Original URL (as last resort)
             if (!fallbackUrls.includes(url)) {
