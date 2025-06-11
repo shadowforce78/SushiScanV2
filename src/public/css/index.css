@@ -1099,8 +1099,12 @@ body {
     width: 100%;
     height: auto;
     display: block;
-    background: var(--bg-tertiary);
+    border-radius: 8px;
     transition: opacity 0.3s ease;
+    /* Ensure images load properly from Google Drive */
+    object-fit: contain;
+    max-width: 100%;
+    background: var(--bg-secondary);
 }
 
 .chapter-page-loader {
@@ -1362,6 +1366,7 @@ body {
     transform: translateY(-2px);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
+
 /* Enhanced error states */
 .chapter-page-loader[title*="Échec"] {
     animation: shake 0.5s ease-in-out;
