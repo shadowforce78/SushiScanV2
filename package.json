@@ -10,7 +10,7 @@
     "make": "xcopy \"src\\public\\*\" \"www\" /E /I /Y && electron-forge make",
     "publish": "electron-forge publish",
     "lint": "echo \"No linting configured\"",
-    "build": "xcopy \"src\\public\\*\" \"www\\\" /E /I /Y",
+    "build": "xcopy \"src\\public\\*\" \"www\" /E /I /Y",
     "cap:add-android": "npx cap add android",
     "cap:add-ios": "npx cap add ios",
     "cap:sync": "npm run build && npx cap sync",
