@@ -81,20 +81,32 @@ jobs:
         
       - name: 🔧 Setup Android SDK Components
         run: |
+          echo "Setting up Android SDK components..."
           sdkmanager "build-tools;34.0.0"
           sdkmanager "platforms;android-34"
           sdkmanager "cmdline-tools;latest"
           
       - name: 🏗️ Build Web Assets
-        run: npm run build
-        
+        run: |
+          echo "Building web assets with Node.js script..."
+          npm run build
+          echo "✅ Web build completed"
+          
       - name: 🔄 Sync Capacitor
-        run: npm run cap:sync
-        
+        run: |
+          echo "Syncing Capacitor..."
+          npm run cap:sync
+          echo "✅ Capacitor sync completed"
+          
+      - name: 🛠️ Make gradlew executable
+        run: chmod +x android/gradlew
+          
       - name: 🛠️ Build Android APK
         run: |
+          echo "Building Android APK..."
           cd android
-          ./gradlew assembleRelease
+          ./gradlew assembleRelease --stacktrace --info
+          echo "✅ Android APK build completed"
           
       - name: 📁 List APK Output
         run: |
