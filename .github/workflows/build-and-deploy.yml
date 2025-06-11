@@ -1,0 +1,247 @@
+name: 🍣 Build & Deploy SushiScan
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # Déclenche sur les tags version (v1.0.0, v1.2.3, etc.)
+    branches:
+      - main      # Déclenche aussi sur push vers main pour les builds de développement
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:  # Permet de déclencher manuellement
+
+env:
+  NODE_VERSION: '18'
+  JAVA_VERSION: '17'
+
+jobs:
+  # 🖥️ Build Windows Executable
+  build-windows:
+    name: 🖥️ Build Windows (.exe)
+    runs-on: windows-latest
+    
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: 📦 Install Dependencies
+        run: npm ci
+        
+      - name: 🏗️ Build Electron App
+        run: npm run make
+        
+      - name: 📁 List Build Output
+        run: |
+          Write-Host "=== Build Output Directory ==="
+          Get-ChildItem -Recurse out/ | Where-Object { $_.Extension -eq ".exe" }
+        shell: pwsh
+        
+      - name: 📤 Upload Windows Executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: sushiscan-windows-exe
+          path: |
+            out/make/squirrel.windows/x64/*.exe
+            out/make/zip/win32/x64/*.zip
+          retention-days: 30
+
+  # 📱 Build Android APK
+  build-android:
+    name: 📱 Build Android (.apk)
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: ☕ Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+          
+      - name: 🤖 Setup Android SDK
+        uses: android-actions/setup-android@v3
+        
+      - name: 📦 Install Dependencies
+        run: npm ci
+        
+      - name: 🔧 Setup Android SDK Components
+        run: |
+          sdkmanager "build-tools;34.0.0"
+          sdkmanager "platforms;android-34"
+          sdkmanager "cmdline-tools;latest"
+          
+      - name: 🏗️ Build Web Assets
+        run: npm run build
+        
+      - name: 🔄 Sync Capacitor
+        run: npm run cap:sync
+        
+      - name: 🛠️ Build Android APK
+        run: |
+          cd android
+          ./gradlew assembleRelease
+          
+      - name: 📁 List APK Output
+        run: |
+          echo "=== APK Build Output ==="
+          find android/app/build/outputs/apk -name "*.apk" -type f
+          
+      - name: 📤 Upload Android APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: sushiscan-android-apk
+          path: |
+            android/app/build/outputs/apk/release/*.apk
+          retention-days: 30
+
+  # 🚀 Create GitHub Release (only on tags)
+  create-release:
+    name: 🚀 Create GitHub Release
+    needs: [build-windows, build-android]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        
+      - name: 📥 Download Windows Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: sushiscan-windows-exe
+          path: ./artifacts/windows/
+          
+      - name: 📥 Download Android Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: sushiscan-android-apk
+          path: ./artifacts/android/
+          
+      - name: 📁 Organize Release Files
+        run: |
+          mkdir -p release-files
+          
+          # Renommer les fichiers avec la version
+          VERSION=${GITHUB_REF#refs/tags/}
+          echo "Version: $VERSION"
+          
+          # Copier et renommer les fichiers Windows
+          if ls ./artifacts/windows/*.exe 1> /dev/null 2>&1; then
+            cp ./artifacts/windows/*.exe ./release-files/SushiScan-$VERSION-Windows.exe
+          fi
+          
+          if ls ./artifacts/windows/*.zip 1> /dev/null 2>&1; then
+            cp ./artifacts/windows/*.zip ./release-files/SushiScan-$VERSION-Windows-Portable.zip
+          fi
+          
+          # Copier et renommer les fichiers Android
+          if ls ./artifacts/android/*.apk 1> /dev/null 2>&1; then
+            cp ./artifacts/android/app-release.apk ./release-files/SushiScan-$VERSION-Android.apk 2>/dev/null || \
+            cp ./artifacts/android/*.apk ./release-files/SushiScan-$VERSION-Android.apk
+          fi
+          
+          echo "=== Release Files ==="
+          ls -la release-files/
+          
+      - name: 📝 Generate Release Notes
+        id: release-notes
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          cat << EOF > release-notes.md
+          # 🍣 SushiScan $VERSION
+          
+          **Lecteur de manga moderne et multiplateforme avec interface sombre élégante**
+          
+          ## 📥 Téléchargements
+          
+          ### 🖥️ **Windows Desktop**
+          - **SushiScan-$VERSION-Windows.exe** - Installateur Windows (recommandé)
+          - **SushiScan-$VERSION-Windows-Portable.zip** - Version portable
+          
+          ### 📱 **Android Mobile**
+          - **SushiScan-$VERSION-Android.apk** - Application Android
+          
+          ## ✨ Fonctionnalités Principales
+          
+          - 🎨 **Interface sombre moderne** avec thème élégant
+          - 📚 **Découverte intelligente** : Tendances, Populaires, Recommandés
+          - 🔍 **Recherche en temps réel** avec résultats instantanés
+          - 📖 **Lecteur avancé** avec chargement séquentiel optimisé
+          - 📱 **Multiplateforme** : Windows, Android (iOS bientôt)
+          - ⚡ **Performance optimisée** pour mobile et bureau
+          
+          ## 🔧 Installation
+          
+          ### Windows
+          1. Télécharger **SushiScan-$VERSION-Windows.exe**
+          2. Exécuter l'installateur
+          3. Profiter de la lecture ! 🍣
+          
+          ### Android
+          1. Télécharger **SushiScan-$VERSION-Android.apk**
+          2. Autoriser l'installation d'applications tierces
+          3. Installer l'APK
+          4. Ouvrir SushiScan et commencer à lire ! 📱
+          
+          ## 🐛 Rapporter un Bug
+          
+          Si vous rencontrez des problèmes, merci de créer une [issue](https://github.com/shadowforce78/sushiscanv2/issues) avec :
+          - Description du problème
+          - Plateforme (Windows/Android)
+          - Version de l'application
+          - Étapes pour reproduire
+          
+          ---
+          
+          **Développé avec 🍣 et ❤️ par SaumonDeLuxe**
+          EOF
+          
+          echo "release-notes<<EOF" >> $GITHUB_OUTPUT
+          cat release-notes.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          
+      - name: 🎉 Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: 🍣 SushiScan ${{ github.ref_name }}
+          body: ${{ steps.release-notes.outputs.release-notes }}
+          files: |
+            release-files/*
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # 🧹 Cleanup Development Builds
+  cleanup-dev-builds:
+    name: 🧹 Cleanup Dev Artifacts
+    needs: [build-windows, build-android]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+      - name: 📝 Development Build Info
+        run: |
+          echo "✅ Build de développement terminé avec succès !"
+          echo "📦 Artifacts disponibles pour 30 jours"
+          echo "🔗 Accessible dans l'onglet Actions de ce workflow"
+          echo ""
+          echo "Pour créer une release officielle :"
+          echo "git tag v1.0.0"
+          echo "git push origin v1.0.0"

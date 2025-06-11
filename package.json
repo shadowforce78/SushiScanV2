@@ -1,8 +1,7 @@
-{
-  "name": "sushiscan-desktop",
-  "productName": "sushiscan-desktop",
+{  "name": "sushiscan-desktop",
+  "productName": "SushiScan",
   "version": "1.0.0",
-  "description": "My Electron application description",
+  "description": "Un lecteur de manga moderne et multiplateforme avec une belle interface sombre - SushiScan",
   "main": "src/index.js",
   "scripts": {
     "start": "electron-forge start",
@@ -18,9 +17,23 @@
     "cap:open-ios": "npx cap open ios",
     "cap:run-android": "npm run build && npx cap run android",
     "cap:run-ios": "npm run build && npx cap run ios",
-    "cap:build": "npm run build && npx cap sync && npx cap build android"
+    "cap:build": "npm run build && npx cap sync && npx cap build android",
+    "cap:build-with-ios": "npm run build && npx cap sync && npx cap build android && npx cap build ios"
   },
-  "keywords": [],
+  "keywords": [
+    "manga", 
+    "reader", 
+    "lecteur", 
+    "electron", 
+    "capacitor", 
+    "cross-platform", 
+    "mobile", 
+    "desktop", 
+    "dark-theme", 
+    "sushiscan", 
+    "scan", 
+    "comic"
+  ],
   "author": {
     "name": "SaumonDeLuxe",
     "email": "planque.adam@gmail.com"
