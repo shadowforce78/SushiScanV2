@@ -1,7 +1,7 @@
 {
   "name": "sushiscan-desktop",
   "productName": "SushiScan",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Un lecteur de manga moderne et multiplateforme avec une belle interface sombre - SushiScan",
   "main": "src/index.js",
   "scripts": {
