@@ -12,7 +12,7 @@ on:
   workflow_dispatch:  # Permet de déclencher manuellement
 
 env:
-  NODE_VERSION: '18'
+  NODE_VERSION: '22'
   JAVA_VERSION: '17'
 
 jobs:
