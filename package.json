@@ -18,8 +18,7 @@
     "cap:open-ios": "npx cap open ios",
     "cap:run-android": "npm run build && npx cap run android",
     "cap:run-ios": "npm run build && npx cap run ios",
-    "cap:build": "npm run build && npx cap sync && npx cap build android",
-    "cap:build-with-ios": "npm run build && npx cap sync && npx cap build android && npx cap build ios"
+    "cap:build": "npm run build && npx cap sync && npx cap build android"
   },
   "keywords": [],
   "author": {
