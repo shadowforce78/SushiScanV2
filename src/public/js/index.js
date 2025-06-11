@@ -1255,11 +1255,11 @@ function checkImageQuality(width, height, pageNumber) {
 // Function to generate optimized Google Drive URLs for direct image display
 function getGoogleDriveFallbackUrls(url) {
     const fallbackUrls = [];
-    
+
     // Detect if running in Capacitor (mobile app)
-    const isMobile = typeof window !== 'undefined' && 
-                    (window.Capacitor || 
-                     /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+    const isMobile = typeof window !== 'undefined' &&
+        (window.Capacitor ||
+            /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
 
     try {
         // Extract file ID from the current URL
@@ -1276,30 +1276,30 @@ function getGoogleDriveFallbackUrls(url) {
                 const match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
                 if (match) fileId = match[1];
             }
-        }        if (fileId) {
+        } if (fileId) {
             // Mobile-optimized URLs that work better with Capacitor
-            
+
             // Method 1: Drive thumbnail (most reliable on mobile)
             fallbackUrls.push(`https://drive.google.com/thumbnail?id=${fileId}&sz=w2048-h2048`);
-            
+
             // Method 2: Drive thumbnail medium (backup)
             fallbackUrls.push(`https://drive.google.com/thumbnail?id=${fileId}&sz=w1024-h1024`);
-            
+
             // Method 3: Google UserContent without size limit (sometimes works)
             fallbackUrls.push(`https://lh3.googleusercontent.com/d/${fileId}`);
-            
+
             // Method 4: Classic Google Drive view (mobile-friendly)
             fallbackUrls.push(`https://drive.google.com/uc?export=view&id=${fileId}`);
-            
+
             // Method 5: Google UserContent high resolution 
             fallbackUrls.push(`https://lh3.googleusercontent.com/d/${fileId}=w2048-h2048`);
-            
+
             // Method 6: Google UserContent very high resolution
             fallbackUrls.push(`https://lh3.googleusercontent.com/d/${fileId}=w4096-h4096`);
-            
+
             // Method 7: Google Drive direct download 
             fallbackUrls.push(`https://drive.usercontent.google.com/download?id=${fileId}&export=view`);
-            
+
             // Method 8: Original URL (as last resort)
             if (!fallbackUrls.includes(url)) {
                 fallbackUrls.push(url);
