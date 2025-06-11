@@ -23,8 +23,7 @@ env:
   NODE_VERSION: "22"
   JAVA_VERSION: "21"
 
-jobs:
-  # 🖥️ Build Windows Executable
+jobs:  # 🖥️ Build Windows Executable
   build-windows:
     name: 🖥️ Build Windows (.exe)
     runs-on: windows-latest
@@ -56,7 +55,7 @@ jobs:
         with:
           name: sushiscan-windows-exe
           path: |
-            out/make/squirrel.windows/x64/*.exe
+            out/make/squirrel.windows/x64/SushiScan-Setup.exe
             out/make/zip/win32/x64/*.zip
           retention-days: 30
 

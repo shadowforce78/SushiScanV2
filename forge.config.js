@@ -4,24 +4,40 @@ const { FuseV1Options, FuseVersion } = require('@electron/fuses');
 module.exports = {
   packagerConfig: {
     asar: true,
+    name: 'SushiScan',
+    executableName: 'SushiScan',
+    // Pas d'icône pour éviter les erreurs
   },
   rebuildConfig: {},
   makers: [
     {
       name: '@electron-forge/maker-squirrel',
-      config: {},
+      config: {
+        name: 'SushiScan',
+        setupExe: 'SushiScan-Setup.exe',
+        // Pas d'icône pour l'installateur pour éviter les erreurs
+      },
     },
     {
       name: '@electron-forge/maker-zip',
-      platforms: ['darwin'],
+      platforms: ['win32', 'darwin'],
+      config: {
+        name: 'SushiScan-Portable'
+      }
     },
     {
       name: '@electron-forge/maker-deb',
-      config: {},
+      config: {
+        name: 'sushiscan',
+        productName: 'SushiScan',
+      },
     },
     {
       name: '@electron-forge/maker-rpm',
-      config: {},
+      config: {
+        name: 'sushiscan',
+        productName: 'SushiScan',
+      },
     },
   ],
   plugins: [
