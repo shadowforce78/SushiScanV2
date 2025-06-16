@@ -1071,6 +1071,90 @@ function backToMangaFromChapter() {
 
 // ========== PAGE LOADING AND RENDERING ========== 
 
+/**
+ * Génère les URLs des pages d'un chapitre basé sur le format anime-sama.fr
+ * @param {string} mangaName - Le nom du manga (au format utilisé dans les URLs anime-sama)
+ * @param {string|number} chapterNumber - Le numéro du chapitre
+ * @param {number} totalPages - Le nombre total de pages du chapitre
+ * @returns {Array<string>} - Tableau des URLs complètes des pages
+ */
+function generateAnimeSamaUrls(mangaName, chapterNumber, totalPages) {
+    const baseUrl = 'https://anime-sama.fr/s2/scans';
+    const urls = [];
+    
+    // Nettoyer et encoder correctement le nom du manga
+    let cleanMangaName = mangaName.trim();
+    
+    // Vérifier si le nom est déjà encodé et le décoder si nécessaire
+    try {
+        if (cleanMangaName.includes('%')) {
+            cleanMangaName = decodeURIComponent(cleanMangaName);
+            console.log(`🔄 Decoded manga name: ${cleanMangaName}`);
+        }
+    } catch (e) {
+        console.log('Could not decode manga name, using as-is');
+    }
+    
+    // Encoder proprement pour l'URL
+    const encodedMangaName = encodeURIComponent(cleanMangaName);
+    
+    // Nettoyer et formater le numéro de chapitre
+    const cleanChapterNumber = chapterNumber.toString().trim();
+    
+    console.log(`🔗 Generating anime-sama URLs for: "${cleanMangaName}" (encoded: "${encodedMangaName}"), Chapter: ${cleanChapterNumber}, Pages: ${totalPages}`);
+    
+    // Générer les URLs pour chaque page
+    for (let pageNumber = 1; pageNumber <= totalPages; pageNumber++) {
+        const url = `${baseUrl}/${encodedMangaName}/${cleanChapterNumber}/${pageNumber}.jpg`;
+        urls.push(url);
+    }
+    
+    console.log(`✅ Generated ${urls.length} anime-sama URLs`);
+    console.log(`📋 Sample URL: ${urls[0]}`); // Log pour vérifier le format
+    return urls;
+}
+
+/**
+ * Génère les URLs des pages d'un chapitre avec gestion des variantes d'extension
+ * @param {string} mangaName - Le nom du manga
+ * @param {string|number} chapterNumber - Le numéro du chapitre
+ * @param {number} totalPages - Le nombre total de pages
+ * @param {Array<string>} extensions - Extensions à essayer (par défaut: ['jpg', 'jpeg', 'png', 'webp'])
+ * @returns {Array<Array<string>>} - Tableau de tableaux d'URLs avec différentes extensions
+ */
+function generateAnimeSamaUrlsWithFallbacks(mangaName, chapterNumber, totalPages, extensions = ['jpg', 'jpeg', 'png', 'webp']) {
+    const baseUrl = 'https://anime-sama.fr/s2/scans';
+    
+    // Nettoyer et encoder correctement le nom du manga
+    let cleanMangaName = mangaName.trim();
+    
+    // Vérifier si le nom est déjà encodé et le décoder si nécessaire
+    try {
+        if (cleanMangaName.includes('%')) {
+            cleanMangaName = decodeURIComponent(cleanMangaName);
+        }
+    } catch (e) {
+        console.log('Could not decode manga name, using as-is');
+    }
+    
+    const encodedMangaName = encodeURIComponent(cleanMangaName);
+    const cleanChapterNumber = chapterNumber.toString().trim();
+    
+    console.log(`🔗 Generating anime-sama URLs with fallbacks for: "${cleanMangaName}" (encoded: "${encodedMangaName}"), Chapter: ${cleanChapterNumber}, Pages: ${totalPages}`);
+    
+    const urlsWithFallbacks = [];
+    
+    for (let pageNumber = 1; pageNumber <= totalPages; pageNumber++) {
+        const pageUrls = extensions.map(ext => 
+            `${baseUrl}/${encodedMangaName}/${cleanChapterNumber}/${pageNumber}.${ext}`
+        );
+        urlsWithFallbacks.push(pageUrls);
+    }
+    
+    console.log(`✅ Generated ${urlsWithFallbacks.length} pages with ${extensions.length} fallback URLs each`);
+    return urlsWithFallbacks;
+}
+
 async function loadChapterPages(imageUrls, chapterData) {
     const pagesContainer = document.getElementById('chapterPages');
     const progressFill = document.getElementById('chapterProgressFill');
@@ -1088,6 +1172,20 @@ async function loadChapterPages(imageUrls, chapterData) {
 
     console.log(`📖 Loading chapter ${chapterNumber} of ${mangaTitle} (${scanName}) - ${totalPages} pages`);
 
+    // Check if we should use anime-sama URLs instead of API URLs
+    const useAnimeSamaUrls = shouldUseAnimeSamaUrls(imageUrls);
+    
+    if (useAnimeSamaUrls) {
+        console.log('🔄 Detected Google Drive URLs, switching to anime-sama.fr URLs');
+        // Try to generate anime-sama URLs if we have the necessary info
+        if (chapterData?.anime_sama_manga_name || mangaTitle) {
+            const animeSamaMangaName = chapterData?.anime_sama_manga_name || formatMangaNameForAnimeSama(mangaTitle);
+            const animeSamaUrls = generateAnimeSamaUrls(animeSamaMangaName, chapterNumber, totalPages);
+            imageUrls = animeSamaUrls;
+            console.log('✅ Switched to anime-sama URLs');
+        }
+    }
+
     // Update progress function
     const updateProgress = () => {
         const progressPercent = (loadedPages / totalPages) * 100;
@@ -1103,7 +1201,9 @@ async function loadChapterPages(imageUrls, chapterData) {
                 }
             }, 1000);
         }
-    };    // Function to load a page with direct Google Drive URLs
+    };
+
+    // Function to load a page with direct URL from API
     function loadPage(index, imageUrl) {
         const pageDiv = document.createElement('div');
         pageDiv.className = 'chapter-page';
@@ -1116,101 +1216,33 @@ async function loadChapterPages(imageUrls, chapterData) {
         `;
 
         const image = pageDiv.querySelector('.chapter-page-image');
-        const loader = pageDiv.querySelector('.chapter-page-loader');        // Get all possible Google Drive URLs
-        const fallbackUrls = getGoogleDriveFallbackUrls(imageUrl);
-        let currentAttempt = 0;
-        let imageTimeout = null;
+        const loader = pageDiv.querySelector('.chapter-page-loader');
 
-        // Function to try the next URL with mobile-friendly delays
-        const tryNextUrl = () => {
-            if (currentAttempt >= fallbackUrls.length) {
-                // All URLs failed
-                console.error(`❌ All fallback URLs failed for page ${index + 1}`);
-                loader.innerHTML = '❌';
-                loader.style.color = 'var(--accent-red)';
-                loader.title = 'Échec du chargement - Vérifiez votre connexion';
-                loadedPages++;
-                updateProgress();
-                return;
-            }
+        console.log(`🔄 Loading page ${index + 1} with URL:`, imageUrl);
 
-            const currentUrl = fallbackUrls[currentAttempt];
-            currentAttempt++;
+        // Set up image handlers
+        image.onload = () => {
+            console.log(`✅ Page ${index + 1} loaded successfully`);
 
-            // Update loader with attempt info
-            if (currentAttempt > 1) {
-                loader.innerHTML = `⏳ (${currentAttempt}/${fallbackUrls.length})`;
-                loader.title = `Tentative ${currentAttempt}/${fallbackUrls.length} - Patientez...`;
-            }
-
-            console.log(`🔄 Loading page ${index + 1} with URL ${currentAttempt}/${fallbackUrls.length}:`, currentUrl);
-
-            // Clear any existing timeout
-            if (imageTimeout) {
-                clearTimeout(imageTimeout);
-                imageTimeout = null;
-            }            // Set up image handlers with longer timeout for mobile
-            image.onload = () => {
-                if (imageTimeout) {
-                    clearTimeout(imageTimeout);
-                    imageTimeout = null;
-                }
-
-                const width = image.naturalWidth;
-                const height = image.naturalHeight;
-
-                // Check image quality
-                if (!checkImageQuality(width, height, index + 1)) {
-                    console.warn(`📏 Page ${index + 1} quality too low (${width}x${height}), trying next URL in 1s...`);
-                    setTimeout(() => tryNextUrl(), 1000); // 1 second delay for quality issues
-                    return;
-                }
-
-                console.log(`✅ Page ${index + 1} loaded successfully - Quality: ${width}x${height}`);
-
-                // Show the image
-                loader.style.display = 'none';
-                image.style.display = 'block';
-                image.style.opacity = '1';
-                loadedPages++;
-                updateProgress();
-            };
-
-            image.onerror = () => {
-                if (imageTimeout) {
-                    clearTimeout(imageTimeout);
-                    imageTimeout = null;
-                }
-                console.warn(`❌ Failed to load page ${index + 1} with URL ${currentAttempt}/${fallbackUrls.length}, trying next...`);
-                tryNextUrl();
-            };
-
-            // Set a very generous timeout for mobile networks (25 seconds)
-            imageTimeout = setTimeout(() => {
-                console.warn(`⏰ Timeout loading page ${index + 1} with URL ${currentAttempt}/${fallbackUrls.length}, trying next...`);
-                image.onload = null;
-                image.onerror = null;
-                tryNextUrl();
-            }, 25000);
-
-            // Try different approaches based on URL type
-            if (currentUrl.includes('lh3.googleusercontent.com')) {
-                // For lh3 URLs, try with crossorigin attribute
-                image.crossOrigin = "anonymous";
-                image.referrerPolicy = "no-referrer";
-                console.log(`🔧 Setting crossOrigin for lh3 URL: ${currentUrl}`);
-            } else {
-                // For other URLs, remove crossorigin
-                image.removeAttribute('crossOrigin');
-                image.removeAttribute('referrerPolicy');
-            }
-
-            // Set the image source directly
-            image.src = currentUrl;
+            // Show the image
+            loader.style.display = 'none';
+            image.style.display = 'block';
+            image.style.opacity = '1';
+            loadedPages++;
+            updateProgress();
         };
 
-        // Start loading with initial delay for mobile (500ms)
-        setTimeout(() => tryNextUrl(), 500);
+        image.onerror = () => {
+            console.error(`❌ Failed to load page ${index + 1}`);
+            loader.innerHTML = '❌';
+            loader.style.color = 'var(--accent-red)';
+            loader.title = 'Échec du chargement';
+            loadedPages++;
+            updateProgress();
+        };
+
+        // Load the image directly with the API URL
+        image.src = imageUrl;
 
         // Add page to container
         pagesContainer.appendChild(pageDiv);
@@ -1222,99 +1254,43 @@ async function loadChapterPages(imageUrls, chapterData) {
     });
 }
 
-// Improved quality detection function for manga pages
-function checkImageQuality(width, height, pageNumber) {
-    // Manga pages can be tall and narrow, so we need different criteria
-
-    // Reject if clearly too small (thumbnails)
-    if (width < 200 && height < 200) {
-        console.warn(`📏 Page ${pageNumber}: Too small (${width}x${height}) - likely thumbnail`);
-        return false;
-    }
-
-    // For tall images (typical manga pages), be more lenient with width
-    if (height > width * 2) { // Tall image (height > 2x width)
-        if (width < 150) {
-            console.warn(`📏 Page ${pageNumber}: Tall image too narrow (${width}x${height})`);
-            return false;
-        }
-        console.log(`📏 Page ${pageNumber}: Tall manga page accepted (${width}x${height})`);
-        return true;
-    }
-
-    // For normal aspect ratio images, use stricter width requirements
-    if (width < 300) {
-        console.warn(`📏 Page ${pageNumber}: Normal image too narrow (${width}x${height})`);
-        return false;
-    }
-
-    console.log(`📏 Page ${pageNumber}: Normal image accepted (${width}x${height})`);
-    return true;
+/**
+ * Détermine si on doit utiliser les URLs anime-sama basé sur les URLs actuelles
+ * @param {Array<string>} imageUrls - Les URLs d'images actuelles
+ * @returns {boolean} - True si on doit utiliser anime-sama URLs
+ */
+function shouldUseAnimeSamaUrls(imageUrls) {
+    if (!imageUrls || imageUrls.length === 0) return false;
+    
+    // Vérifier si la majorité des URLs sont des liens Google Drive
+    const googleDriveUrls = imageUrls.filter(url => 
+        url.includes('drive.google.com') || 
+        url.includes('drive.usercontent.google.com') ||
+        url.includes('googleusercontent.com')
+    );
+    
+    return googleDriveUrls.length > imageUrls.length * 0.5; // Plus de 50% sont des liens Google Drive
 }
 
-// Function to generate optimized Google Drive URLs for direct image display
-function getGoogleDriveFallbackUrls(url) {
-    const fallbackUrls = [];
-
-    // Detect if running in Capacitor (mobile app)
-    const isMobile = typeof window !== 'undefined' &&
-        (window.Capacitor ||
-            /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
-
+/**
+ * Formate le nom du manga pour l'utiliser dans les URLs anime-sama
+ * @param {string} mangaTitle - Le titre original du manga
+ * @returns {string} - Le nom formaté pour anime-sama (avec encodage URL correct)
+ */
+function formatMangaNameForAnimeSama(mangaTitle) {
+    // Décoder d'abord au cas où le titre serait déjà partiellement encodé
+    let cleanTitle = mangaTitle.trim();
+    
     try {
-        // Extract file ID from the current URL
-        let fileId = null;
-
-        if (url.includes('drive.usercontent.google.com')) {
-            const match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-            if (match) fileId = match[1];
-        } else if (url.includes('drive.google.com')) {
-            if (url.includes('/file/d/')) {
-                const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
-                if (match) fileId = match[1];
-            } else if (url.includes('id=')) {
-                const match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-                if (match) fileId = match[1];
-            }
-        } if (fileId) {
-            // Mobile-optimized URLs that work better with Capacitor
-
-            // Method 1: Drive thumbnail (most reliable on mobile)
-            fallbackUrls.push(`https://drive.google.com/thumbnail?id=${fileId}&sz=w2048-h2048`);
-
-            // Method 2: Drive thumbnail medium (backup)
-            fallbackUrls.push(`https://drive.google.com/thumbnail?id=${fileId}&sz=w1024-h1024`);
-
-            // Method 3: Google UserContent without size limit (sometimes works)
-            fallbackUrls.push(`https://lh3.googleusercontent.com/d/${fileId}`);
-
-            // Method 4: Classic Google Drive view (mobile-friendly)
-            fallbackUrls.push(`https://drive.google.com/uc?export=view&id=${fileId}`);
-
-            // Method 5: Google UserContent high resolution 
-            fallbackUrls.push(`https://lh3.googleusercontent.com/d/${fileId}=w2048-h2048`);
-
-            // Method 6: Google UserContent very high resolution
-            fallbackUrls.push(`https://lh3.googleusercontent.com/d/${fileId}=w4096-h4096`);
-
-            // Method 7: Google Drive direct download 
-            fallbackUrls.push(`https://drive.usercontent.google.com/download?id=${fileId}&export=view`);
-
-            // Method 8: Original URL (as last resort)
-            if (!fallbackUrls.includes(url)) {
-                fallbackUrls.push(url);
-            }
-        } else {
-            // If we can't extract file ID, just use the original URL
-            fallbackUrls.push(url);
-        }
-    } catch (error) {
-        console.error('Error generating fallback URLs:', error);
-        fallbackUrls.push(url);
+        // Essayer de décoder si c'est déjà encodé
+        cleanTitle = decodeURIComponent(cleanTitle);
+    } catch (e) {
+        // Si le décodage échoue, utiliser le titre tel quel
+        console.log('Title not encoded, using as-is:', cleanTitle);
     }
-
-    console.log(`🔗 Generated ${fallbackUrls.length} fallback URLs for Google Drive image`);
-    return fallbackUrls;
+    
+    // Encoder proprement pour l'URL
+    return encodeURIComponent(cleanTitle);
 }
 
 // ===========================
