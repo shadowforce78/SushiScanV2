@@ -844,10 +844,8 @@ async function openScanType(url) {
                     console.log('Attempting to load chapter for:', {
                         title: mangaTitle,
                         scanName: clickedScanType
-                    });
-
-                    // Try to load chapter 1 by default
-                    await showChapterViewer(mangaTitle, clickedScanType, '1');
+                    });                    // Try to load chapter 1 by default
+                    await showChapterViewer(mangaTitle, clickedScanType, '1', 20);
                     return;
                 }
             }
@@ -869,29 +867,8 @@ async function openScanType(url) {
 
 // ========== CHAPTER VIEWER FUNCTIONALITY ========== 
 
-async function fetchChapterData(title, scanName, chapterNumber) {
-    try {
-        const encodedTitle = encodeURIComponent(title);
-        const encodedScanName = encodeURIComponent(scanName);
-        const encodedChapterNumber = encodeURIComponent(chapterNumber);
-
-        const url = `https://api.saumondeluxe.com/scans/chapter?title=${encodedTitle}&scan_name=${encodedScanName}&chapter_number=${encodedChapterNumber}`;
-        const response = await fetch(url);
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const chapterData = await response.json();
-        return chapterData;
-    } catch (error) {
-        console.error(`Error fetching chapter data for "${title}" chapter ${chapterNumber}:`, error);
-        return null;
-    }
-}
-
-async function showChapterViewer(title, scanName, chapterNumber) {
-    console.log('Showing chapter:', { title, scanName, chapterNumber });
+async function showChapterViewer(title, scanName, chapterNumber, totalPages = 20) {
+    console.log('Showing chapter:', { title, scanName, chapterNumber, totalPages });
 
     // Hide all other content
     hideAllContentIncludingManga();
@@ -900,12 +877,18 @@ async function showChapterViewer(title, scanName, chapterNumber) {
     showChapterLoading();
 
     try {
-        const chapterData = await fetchChapterData(title, scanName, chapterNumber);
-        if (chapterData) {
-            displayChapter(chapterData);
-        } else {
-            showChapterError('Impossible de charger les pages du chapitre');
-        }
+        // Create chapter data object directly without API call
+        const chapterData = {
+            title: `Chapitre ${chapterNumber}`,
+            number: chapterNumber,
+            manga_title: title,
+            scan_name: scanName,
+            page_count: totalPages,
+            added_at: new Date().toISOString(),
+            image_urls: [] // Will be generated dynamically
+        };
+
+        displayChapter(chapterData);
     } catch (error) {
         console.error('Error showing chapter:', error);
         showChapterError('Erreur lors du chargement du chapitre');
@@ -976,43 +959,42 @@ async function displayChapter(chapterData) {
                     </div>
                     <div class="chapter-meta-item">
                         🏷️ ${chapterData.scan_name || 'Scan inconnu'}
-                    </div>
-                    <div class="chapter-meta-item">
+                    </div>                    <div class="chapter-meta-item">
                         📄 ${chapterData.page_count || chapterData.image_urls?.length || 0} pages
                     </div>
                     <div class="chapter-meta-item">
                         📅 ${addedDate}
                     </div>
                 </div>
-            </div>
-            <div class="chapter-navigation">
-                <button class="nav-btn ${currentChapter <= 1 ? 'disabled' : ''}" 
-                        onclick="${currentChapter > 1 ? `navigateToChapter('prev', '${title}', '${scanName}', '${currentChapter}')` : ''}"
-                        ${currentChapter <= 1 ? 'disabled' : ''}>
-                    ⬅️ Chapitre précédent
-                </button>
-                <button class="nav-btn back-to-manga-btn" onclick="backToMangaFromChapter()">
-                    📖 Retour aux détails
-                </button>
-                <button class="nav-btn" onclick="navigateToChapter('next', '${title}', '${scanName}', '${currentChapter}')">
-                    Chapitre suivant ➡️
-                </button>
-            </div>
+            </div>        <div class="chapter-navigation">
+            <button class="nav-btn ${currentChapter <= 1 ? 'disabled' : ''}" 
+                    onclick="${currentChapter > 1 ? `navigateToChapter('prev', '${title}', '${scanName}', '${currentChapter}', ${chapterData.page_count || 20})` : ''}"
+                    ${currentChapter <= 1 ? 'disabled' : ''}>
+                ⬅️ Chapitre précédent
+            </button>
+            <button class="nav-btn back-to-manga-btn" onclick="backToMangaFromChapter()">
+                📖 Retour aux détails
+            </button>
+            <button class="nav-btn" onclick="navigateToChapter('next', '${title}', '${scanName}', '${currentChapter}', ${chapterData.page_count || 20})">
+                Chapitre suivant ➡️
+            </button>
+        </div>
         </div>
         <div class="chapter-progress" id="chapterProgress">
             <div class="chapter-progress-bar">
                 <div class="chapter-progress-fill" id="chapterProgressFill"></div>
             </div>
-            <div class="chapter-progress-text" id="chapterProgressText">0/${chapterData.image_urls?.length || 0}</div>
+            <div class="chapter-progress-text" id="chapterProgressText">0/${chapterData.page_count || 0}</div>
         </div>
         <div class="chapter-pages" id="chapterPages">
             <!-- Pages will be loaded here -->
         </div>
-    `;
-
-    // Load chapter pages
-    if (chapterData.image_urls && chapterData.image_urls.length > 0) {
-        await loadChapterPages(chapterData.image_urls, chapterData);
+    `;    // Load chapter pages
+    if (chapterData.page_count > 0) {
+        // Generate anime-sama URLs directly
+        const animeSamaMangaName = formatMangaNameForAnimeSama(chapterData.manga_title);
+        const animeSamaUrls = generateAnimeSamaUrls(animeSamaMangaName, chapterData.number, chapterData.page_count);
+        await loadChapterPages(animeSamaUrls, chapterData);
     } else {
         showChapterError('Aucune page disponible pour ce chapitre');
     }
@@ -1020,7 +1002,7 @@ async function displayChapter(chapterData) {
     chapterViewer.style.display = 'block';
 }
 
-async function navigateToChapter(direction, currentTitle, currentScanName, currentChapterNumber) {
+async function navigateToChapter(direction, currentTitle, currentScanName, currentChapterNumber, currentTotalPages = 20) {
     const currentChapter = parseInt(currentChapterNumber);
     const newChapterNumber = direction === 'next' ? currentChapter + 1 : currentChapter - 1;
 
@@ -1030,7 +1012,7 @@ async function navigateToChapter(direction, currentTitle, currentScanName, curre
     }
 
     console.log(`Navigating to chapter ${newChapterNumber}`);
-    await showChapterViewer(currentTitle, currentScanName, newChapterNumber.toString());
+    await showChapterViewer(currentTitle, currentScanName, newChapterNumber.toString(), currentTotalPages);
 }
 
 function showChapterError(message) {
@@ -1171,20 +1153,7 @@ async function loadChapterPages(imageUrls, chapterData) {
     const chapterNumber = chapterData?.number || '1';
 
     console.log(`📖 Loading chapter ${chapterNumber} of ${mangaTitle} (${scanName}) - ${totalPages} pages`);
-
-    // Check if we should use anime-sama URLs instead of API URLs
-    const useAnimeSamaUrls = shouldUseAnimeSamaUrls(imageUrls);
-    
-    if (useAnimeSamaUrls) {
-        console.log('🔄 Detected Google Drive URLs, switching to anime-sama.fr URLs');
-        // Try to generate anime-sama URLs if we have the necessary info
-        if (chapterData?.anime_sama_manga_name || mangaTitle) {
-            const animeSamaMangaName = chapterData?.anime_sama_manga_name || formatMangaNameForAnimeSama(mangaTitle);
-            const animeSamaUrls = generateAnimeSamaUrls(animeSamaMangaName, chapterNumber, totalPages);
-            imageUrls = animeSamaUrls;
-            console.log('✅ Switched to anime-sama URLs');
-        }
-    }
+    console.log(`� Using anime-sama.fr URLs directly`);
 
     // Update progress function
     const updateProgress = () => {
@@ -1201,9 +1170,7 @@ async function loadChapterPages(imageUrls, chapterData) {
                 }
             }, 1000);
         }
-    };
-
-    // Function to load a page with direct URL from API
+    };    // Function to load a page with direct URL from anime-sama
     function loadPage(index, imageUrl) {
         const pageDiv = document.createElement('div');
         pageDiv.className = 'chapter-page';
@@ -1241,7 +1208,7 @@ async function loadChapterPages(imageUrls, chapterData) {
             updateProgress();
         };
 
-        // Load the image directly with the API URL
+        // Load the image directly with anime-sama URL
         image.src = imageUrl;
 
         // Add page to container
@@ -1252,24 +1219,6 @@ async function loadChapterPages(imageUrls, chapterData) {
     imageUrls.forEach((imageUrl, index) => {
         loadPage(index, imageUrl);
     });
-}
-
-/**
- * Détermine si on doit utiliser les URLs anime-sama basé sur les URLs actuelles
- * @param {Array<string>} imageUrls - Les URLs d'images actuelles
- * @returns {boolean} - True si on doit utiliser anime-sama URLs
- */
-function shouldUseAnimeSamaUrls(imageUrls) {
-    if (!imageUrls || imageUrls.length === 0) return false;
-    
-    // Vérifier si la majorité des URLs sont des liens Google Drive
-    const googleDriveUrls = imageUrls.filter(url => 
-        url.includes('drive.google.com') || 
-        url.includes('drive.usercontent.google.com') ||
-        url.includes('googleusercontent.com')
-    );
-    
-    return googleDriveUrls.length > imageUrls.length * 0.5; // Plus de 50% sont des liens Google Drive
 }
 
 /**
