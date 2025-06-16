@@ -807,17 +807,6 @@ async function openScanType(url) {
     try {
         const urlObj = new URL(url);
 
-        // Check if it's a SushiScan API URL
-        if (urlObj.hostname === 'api.saumondeluxe.com' && urlObj.pathname === '/scans/chapter') {
-            const title = urlObj.searchParams.get('title');
-            const scanName = urlObj.searchParams.get('scan_name');
-            const chapterNumber = urlObj.searchParams.get('chapter_number');
-
-            if (title && scanName && chapterNumber) {
-                showChapterViewer(title, scanName, chapterNumber);
-                return;
-            }
-        }
 
         // For other URLs, try to extract manga info and scan type info from current context
         const mangaDetailsElement = document.getElementById('mangaDetails');
