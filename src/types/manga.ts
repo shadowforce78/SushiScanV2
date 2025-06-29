@@ -30,3 +30,7 @@ export interface Manga {
 export interface MangaListResponse {
   mangas: Manga[];
 }
+
+export interface MangaDetailResponse {
+  manga: Manga;
+}

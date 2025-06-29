@@ -1,6 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
-  Alert,
   FlatList,
   RefreshControl,
   SafeAreaView,
@@ -12,23 +11,30 @@ import {
 import { LoadingSpinner } from '../src/components/LoadingSpinner';
 import { MangaCard } from '../src/components/MangaCard';
 import { useMangaList } from '../src/hooks/useMangaList';
+import { MangaDetailScreen } from '../src/screens/MangaDetailScreen';
 import { Manga } from '../src/types/manga';
 
 export default function Index() {
   const { mangas, loading, error, refreshing, refresh } = useMangaList();
+  const [selectedManga, setSelectedManga] = useState<string | null>(null);
 
   const handleMangaPress = (manga: Manga) => {
-    Alert.alert(
-      manga.title,
-      `${manga.total_chapters} chapitres disponibles\n${manga.genres.join(', ')}`,
-      [
-        {
-          text: 'OK',
-          style: 'default',
-        },
-      ]
-    );
+    setSelectedManga(manga.title);
   };
+
+  const handleBackPress = () => {
+    setSelectedManga(null);
+  };
+
+  // Si un manga est sélectionné, afficher l'écran de détails
+  if (selectedManga) {
+    return (
+      <MangaDetailScreen 
+        mangaName={selectedManga} 
+        onBack={handleBackPress} 
+      />
+    );
+  }
 
   const renderMangaItem = ({ item }: { item: Manga }) => (
     <MangaCard manga={item} onPress={handleMangaPress} />
