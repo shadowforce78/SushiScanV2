@@ -10,12 +10,22 @@ import {
 } from 'react-native';
 import { LoadingSpinner } from '../src/components/LoadingSpinner';
 import { MangaCard } from '../src/components/MangaCard';
+import { SearchBar } from '../src/components/SearchBar';
 import { useMangaList } from '../src/hooks/useMangaList';
+import { useMangaSearch } from '../src/hooks/useMangaSearch';
 import { MangaDetailScreen } from '../src/screens/MangaDetailScreen';
 import { Manga } from '../src/types/manga';
 
 export default function Index() {
   const { mangas, loading, error, refreshing, refresh } = useMangaList();
+  const { 
+    searchResults, 
+    loading: searchLoading, 
+    error: searchError, 
+    hasSearched,
+    searchMangas, 
+    clearSearch 
+  } = useMangaSearch();
   const [selectedManga, setSelectedManga] = useState<string | null>(null);
 
   const handleMangaPress = (manga: Manga) => {
@@ -24,6 +34,14 @@ export default function Index() {
 
   const handleBackPress = () => {
     setSelectedManga(null);
+  };
+
+  const handleSearch = (query: string) => {
+    searchMangas(query);
+  };
+
+  const handleClearSearch = () => {
+    clearSearch();
   };
 
   // Si un manga est sélectionné, afficher l'écran de détails
@@ -44,7 +62,10 @@ export default function Index() {
     <View style={styles.header}>
       <Text style={styles.headerTitle}>SushiScan</Text>
       <Text style={styles.headerSubtitle}>
-        {mangas.length} mangas disponibles
+        {hasSearched 
+          ? `${searchResults.length} résultat${searchResults.length > 1 ? 's' : ''} trouvé${searchResults.length > 1 ? 's' : ''}`
+          : `${mangas.length} mangas disponibles`
+        }
       </Text>
     </View>
   );
@@ -52,37 +73,51 @@ export default function Index() {
   const renderEmptyComponent = () => (
     <View style={styles.emptyContainer}>
       <Text style={styles.emptyText}>
-        {error ? 'Erreur lors du chargement' : 'Aucun manga trouvé'}
+        {hasSearched 
+          ? (searchError ? 'Erreur lors de la recherche' : 'Aucun résultat trouvé')
+          : (error ? 'Erreur lors du chargement' : 'Aucun manga trouvé')
+        }
       </Text>
-      {error && (
-        <Text style={styles.errorText}>{error}</Text>
+      {(error || searchError) && (
+        <Text style={styles.errorText}>{error || searchError}</Text>
       )}
     </View>
   );
 
-  if (loading && !refreshing) {
+  // Déterminer quelles données afficher
+  const displayData = hasSearched ? searchResults : mangas;
+  const isLoading = hasSearched ? searchLoading : (loading && !refreshing);
+
+  if (isLoading) {
     return <LoadingSpinner />;
   }
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <SearchBar 
+        onSearch={handleSearch}
+        onClear={handleClearSearch}
+        loading={searchLoading}
+      />
       <FlatList
-        data={mangas}
+        data={displayData}
         renderItem={renderMangaItem}
         keyExtractor={(item) => item.title}
         ListHeaderComponent={renderHeader}
         ListEmptyComponent={renderEmptyComponent}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={refresh}
-            colors={['#007AFF']}
-            tintColor="#007AFF"
-          />
+          !hasSearched ? (
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={refresh}
+              colors={['#007AFF']}
+              tintColor="#007AFF"
+            />
+          ) : undefined
         }
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={mangas.length === 0 ? styles.emptyList : undefined}
+        contentContainerStyle={displayData.length === 0 ? styles.emptyList : undefined}
       />
     </SafeAreaView>
   );
