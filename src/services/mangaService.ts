@@ -1,5 +1,5 @@
 import { API_CONFIG } from "../constants";
-import { MangaDetailResponse, MangaListResponse, MangaSearchResponse } from "../types/manga";
+import { ChapterPagesResponse, MangaDetailResponse, MangaListResponse, MangaSearchResponse } from "../types/manga";
 
 export const fetchMangaList = async (
   limit: number = API_CONFIG.DEFAULT_LIMIT,
@@ -81,6 +81,28 @@ export const searchMangaByQuery = async (query: string): Promise<MangaSearchResp
     return data;
   } catch (error) {
     console.error("Error searching manga by query:", error);
+    throw error;
+  }
+};
+
+export const fetchChapterPages = async (
+  mangaName: string,
+  scansType: string,
+  chapter: number
+): Promise<ChapterPagesResponse> => {
+  try {
+    const response = await fetch(
+      `${API_CONFIG.BASE_URL}/scans/chapter/pages?manga_name=${encodeURIComponent(mangaName)}&scans_type=${encodeURIComponent(scansType)}&chapter=${chapter}`
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching chapter pages:", error);
     throw error;
   }
 };

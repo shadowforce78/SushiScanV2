@@ -15,9 +15,10 @@ import { Manga } from '../types/manga';
 interface MangaDetailsProps {
   manga: Manga;
   onBack: () => void;
+  onChapterSelect?: (scansType: string, chapter: number) => void;
 }
 
-export const MangaDetails: React.FC<MangaDetailsProps> = ({ manga, onBack }) => {
+export const MangaDetails: React.FC<MangaDetailsProps> = ({ manga, onBack, onChapterSelect }) => {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('fr-FR', {
@@ -30,23 +31,28 @@ export const MangaDetails: React.FC<MangaDetailsProps> = ({ manga, onBack }) => 
   };
 
   const handleChapterTypePress = (chapterType: any) => {
-    Alert.alert(
-      chapterType.name,
-      `${chapterType.chapters_count} chapitres disponibles`,
-      [
-        {
-          text: 'Lire',
-          onPress: () => {
-            // TODO: Naviguer vers le lecteur
-            Alert.alert('À venir', 'Fonctionnalité de lecture à implémenter');
+    if (onChapterSelect) {
+      // Utiliser la callback pour ouvrir la liste des chapitres
+      onChapterSelect(chapterType.name, 1); // Par défaut, commencer au chapitre 1
+    } else {
+      Alert.alert(
+        chapterType.name,
+        `${chapterType.chapters_count} chapitres disponibles`,
+        [
+          {
+            text: 'Lire',
+            onPress: () => {
+              // TODO: Naviguer vers le lecteur
+              Alert.alert('À venir', 'Fonctionnalité de lecture à implémenter');
+            },
           },
-        },
-        {
-          text: 'Annuler',
-          style: 'cancel',
-        },
-      ]
-    );
+          {
+            text: 'Annuler',
+            style: 'cancel',
+          },
+        ]
+      );
+    }
   };
 
   return (

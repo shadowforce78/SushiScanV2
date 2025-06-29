@@ -38,3 +38,13 @@ export interface MangaDetailResponse {
 export interface MangaSearchResponse {
   results: Manga[];
 }
+
+export interface ChapterPagesResponse {
+  pages: string[];
+}
+
+export interface ChapterInfo {
+  mangaName: string;
+  scansType: string;
+  chapter: number;
+}
