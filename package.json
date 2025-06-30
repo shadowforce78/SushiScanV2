@@ -1,32 +1,20 @@
 {
-  "name": "capacitor-app",
+  "name": "sushiscanv2",
   "version": "1.0.0",
-  "description": "An Amazing Capacitor App",
-  "type": "module",
-  "keywords": [
-    "capacitor",
-    "mobile"
-  ],
+  "main": "index.js",
   "scripts": {
-    "start": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "electron": "npx cap open @capacitor-community/electron",
-    "android": "npx cap run android",
-    "sync": "npx cap sync"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "dependencies": {
-    "@capacitor-community/electron": "^5.0.1",
-    "@capacitor/android": "^7.4.0",
-    "@capacitor/camera": "latest",
-    "@capacitor/core": "^7.4.0",
-    "@capacitor/ios": "^7.4.0",
-    "@capacitor/splash-screen": "latest"
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shadowforce78/SushiScanV2.git"
   },
-  "devDependencies": {
-    "@capacitor/cli": "^7.4.0",
-    "vite": "^5.4.2"
-  },
+  "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/shadowforce78/SushiScanV2/issues"
+  },
+  "homepage": "https://github.com/shadowforce78/SushiScanV2#readme",
+  "description": ""
 }
