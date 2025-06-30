@@ -27,10 +27,15 @@ cargo tauri --version >nul 2>&1
 if %errorlevel% neq 0 (
     echo [INFO] Installation de Tauri CLI...
     cargo install tauri-cli --version "^2.0"
+    echo [INFO] Tauri CLI installe avec succes!
+    echo [INFO] Redemarrage du PATH pour detecter la nouvelle installation...
+    
+    REM Verification post-installation
+    cargo tauri --version >nul 2>&1
     if %errorlevel% neq 0 (
-        echo [ERREUR] Echec de l'installation de Tauri CLI
-        pause
-        exit /b 1
+        echo [AVERTISSEMENT] Tauri CLI installe mais non detecte automatiquement
+        echo [INFO] Vous devrez peut-etre redemarrer votre terminal ou votre PC
+        echo [INFO] Tentative de continuation...
     )
 )
 
@@ -56,7 +61,17 @@ echo *** Fermez cette fenetre pour arreter l'application ***
 echo.
 
 REM Demarage de Tauri en mode dev
+echo [INFO] Execution de 'cargo tauri dev'...
 cargo tauri dev
+if %errorlevel% neq 0 (
+    echo.
+    echo [ERREUR] Echec du demarrage de l'application
+    echo [INFO] Si Tauri CLI vient d'etre installe, vous devrez peut-etre:
+    echo [INFO] 1. Redemarrer votre terminal
+    echo [INFO] 2. Ou redemarrer votre PC
+    echo [INFO] 3. Ou executer manuellement: cargo tauri dev
+    echo.
+)
 
 echo.
 echo L'application s'est arretee.

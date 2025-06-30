@@ -1,6 +1,6 @@
 <script>
-  import { onMount } from 'svelte';
-  import { getMangas } from '../lib/api.js';
+  import { onMount } from "svelte";
+  import { getMangas } from "../lib/api.js";
 
   let mangas = [];
 
