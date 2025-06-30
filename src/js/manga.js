@@ -29,8 +29,23 @@ function displayMangaDetails(manga) {
             scanDiv.innerHTML = `
                 <h3>${scan.name}</h3>
                 <p>Total Chapters: ${scan.total_chapters}</p>
-                <a href="${scan.url}" target="_blank">${scan.name}</a>
             `;
+
+
+            for (let i = 1; i <= scan.total_chapters; i++) {
+                const chapterButton = document.createElement('button');
+                chapterButton.className = 'chapter-button';
+                chapterButton.innerText = `Chapter ${i}`;
+                chapterButton.onclick = async () => {
+                    const encodedTitle = encodeURIComponent(manga.title);
+                    const encodedScansType = encodeURIComponent(scan.name);
+                    const pages = await fetchScansPage(encodedTitle, encodedScansType, i);
+                    displayScans(pages);
+                }
+
+                scanDiv.appendChild(chapterButton);
+            }
+
             infoDiv.appendChild(scanDiv);
         });
     } else {
