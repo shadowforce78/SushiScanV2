@@ -18,7 +18,10 @@ window.onload = async () => {
         const mangaDiv = document.createElement('div');
         mangaDiv.className = `manga-${encodeURIComponent(manga.title)}`;
         mangaDiv.innerHTML = `
-            <button class="manga-button" onclick="fetchMangaDetails('${encodeURIComponent(manga.title)}')">${manga.title}</button>
+            <button class="manga-button" onclick="fetchMangaDetails('${encodeURIComponent(manga.title)}')">
+            <img src="${manga.image_url}" alt="${manga.title} cover" class="manga-cover">
+            </button>
+            <div class="manga-title">${manga.title}</div>
         `;
         mainDiv.appendChild(mangaDiv);
     });
