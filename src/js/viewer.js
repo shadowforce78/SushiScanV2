@@ -5,6 +5,8 @@ async function fetchScansPage(encodedTitle, encoded_scans_type, chapter) {
 }
 
 function displayScans(pages) {
+    const homepageDiv = document.getElementsByClassName('homepage')[0];
+    const infoDiv = document.getElementsByClassName('info')[0];
     const scansDiv = document.getElementsByClassName('viewer')[0];
     scansDiv.innerHTML = ''; // Clear previous content
     pages.forEach(page => {
