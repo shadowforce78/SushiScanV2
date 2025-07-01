@@ -1,6 +1,5 @@
 const API_URL = 'https://api.saumondeluxe.com';
 
-
 async function tempHomepage() {
     const response = await fetch(`${API_URL}/scans/mangaList`);
     const data = await response.json();
@@ -15,6 +14,19 @@ async function handleMangaClick(encodedTitle) {
 }
 
 window.onload = async () => {
+    // Check for URL parameters after all scripts are loaded
+    const URL_PARAM = new URLSearchParams(window.location.search);
+    const mangaQuery = URL_PARAM.get('manga');
+
+    if (mangaQuery) {
+        // If a manga query is present in the URL, fetch and display its details
+        const manga = await fetchMangaDetails(mangaQuery);
+        if (manga) {
+            displayMangaDetails(manga);
+        }
+        return; // Exit early if displaying manga details
+    }
+
     const homepageDiv = document.getElementsByClassName('homepage')[0];
     const infoDiv = document.getElementsByClassName('info')[0];
     const mangaList = await tempHomepage();

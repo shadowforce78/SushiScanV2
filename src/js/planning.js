@@ -45,14 +45,17 @@ window.onload = async () => {
             const itemDiv = document.createElement('div');
             itemDiv.className = 'planning-item';
             itemDiv.innerHTML = `
-                <h3>${item.name}</h3>
-                <p>Day: ${item.day}</p>
-                <p>URL: <a href="${item.url}">${item.url}</a></p>
-                <p>Image: <img src="${item.image}" alt="${item.name}"></p>
-                <p>Time: ${item.time}</p>
-                <p>Status: ${item.status}</p>
-                <p>Language: ${item.language}</p>
-                <p>Updated At: ${item.updated_at.$date}</p>
+                <a class="manga-button" href="index.html?manga=${encodeURIComponent(item.name)}">
+                    <img src="${item.image}" alt="${item.name}" class="manga-cover">
+                </a>
+                <div class="planning-info">
+                    <h3>${item.name}</h3>
+                    <p>Day: ${item.day}</p>
+                    <p>Time: ${item.time}</p>
+                    <p>Status: ${item.status}</p>
+                    <p>Language: ${item.language}</p>
+                    <p>Updated At: ${item.updated_at.$date}</p>
+                </div>
             `;
             dayDiv.appendChild(itemDiv);
         });
