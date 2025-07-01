@@ -17,7 +17,7 @@ function displayMangaDetails(manga) {
     const infoDiv = document.getElementsByClassName('info')[0];
     homepageDiv.innerHTML = ''; // Clear the homepage content
     infoDiv.innerHTML = `
-            <button class="back-button" onclick="window.location.reload()">Back to Homepage</button>
+            <button class="back-button" onclick="window.location.href='index.html'">Back to Homepage</button>
                 <h2>${manga.title}</h2>
                 <img src="${manga.image_url}" alt="${manga.title} cover" class="manga-cover">
             `;

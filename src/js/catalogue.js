@@ -179,6 +179,7 @@ function displayMangaResults(mangaList) {
         <a href="index.html?manga=${manga.title}" class="manga-button">
         <img src="${manga.image_url}" alt="${manga.title} cover" class="manga-cover">
         </a>
+        <p class="manga-title">${manga.title}</p>
 
         `;
         mangaGrid.appendChild(mangaDiv);
