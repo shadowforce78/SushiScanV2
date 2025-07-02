@@ -1,0 +1,144 @@
+/* ===== INDEX PAGE STYLES ===== */
+
+/* Homepage specific styles */
+.homepage {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.homepage > div {
+    background-color: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    transition: var(--transition);
+    border: 1px solid var(--border-muted);
+    animation: fadeIn 0.3s ease-out;
+}
+
+.homepage > div:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-large);
+    border-color: var(--border-color);
+}
+
+/* Search bar styles */
+.searchbar {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    max-width: 600px;
+}
+
+.searchbar input {
+    flex: 1;
+}
+
+.searchbar button,
+#searchButton {
+    white-space: nowrap;
+}
+
+/* Info section for manga details */
+.info {
+    background-color: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    border: 1px solid var(--border-color);
+}
+
+.info h2 {
+    color: var(--accent-primary);
+    margin-bottom: 1rem;
+    font-size: 1.8rem;
+}
+
+.info img.manga-cover {
+    width: 200px;
+    height: 280px;
+    object-fit: cover;
+    border-radius: var(--border-radius);
+    margin-bottom: 1.5rem;
+    box-shadow: var(--shadow-medium);
+}
+
+.back-button {
+    margin-bottom: 1.5rem;
+}
+
+/* Scan chapters */
+.scan-chapter {
+    background-color: var(--bg-tertiary);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--border-color);
+    animation: fadeIn 0.3s ease-out;
+}
+
+.scan-chapter h3 {
+    color: var(--accent-primary);
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+}
+
+.scan-chapter p {
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+}
+
+.chapter-button {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    padding: 0.5rem 1rem;
+    margin: 0.25rem;
+    border-radius: var(--border-radius-small);
+    cursor: pointer;
+    transition: var(--transition);
+    font-size: 0.9rem;
+}
+
+.chapter-button:hover {
+    background-color: var(--accent-primary);
+    border-color: var(--accent-primary);
+    color: white;
+}
+
+/* Viewer section */
+.viewer {
+    background-color: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    border: 1px solid var(--border-color);
+    text-align: center;
+}
+
+.viewer img {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-medium);
+    margin-bottom: 1rem;
+}
+
+/* Responsive for index page */
+@media (max-width: 768px) {
+    .searchbar {
+        flex-direction: column;
+    }
+    
+    .info img.manga-cover {
+        width: 150px;
+        height: 200px;
+    }
+}
+
+@media (max-width: 480px) {
+    .homepage {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    }
+}
