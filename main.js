@@ -13,7 +13,7 @@ function createWindow() {
     win.loadFile(path.join(__dirname, 'src', 'index.html'))
 
     // Open the DevTools if needed
-    win.webContents.openDevTools()
+    // win.webContents.openDevTools()
 }
 
 app.whenReady().then(() => {
