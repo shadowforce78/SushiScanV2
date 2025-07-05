@@ -1,20 +1,17 @@
-<!    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Sushi Scan Desktop - Planning</title>
-        <link rel="stylesheet" href="./css/common.css">
-        <link rel="stylesheet" href="./css/planning.css">
-        <script src="./js/planning.js"></script>
-        <script src="./js/manga.js"></script>
-    </head>E html>
+<!DOCTYPE html>
 <html lang="en">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Sushi Scan Desktop - Planning</title>
+        <meta http-equiv="Content-Security-Policy"
+            content="script-src 'self' 'unsafe-inline';" />
+        <link rel="stylesheet" href="./css/common.css">
+        <link rel="stylesheet" href="./css/planning.css">
+        <script src="./js/planning.js"></script>
+        <script src="./js/manga.js"></script>
     </head>
     <body>
-        <body>
             <div class="header">
                 <!-- Logo / Catalogue / Planning / Settings / Profile (Les fonctionnalités seront dev plus tard)-->
                 <a href="./index.html"><h1>Sushi Scan</h1></a>
@@ -28,7 +25,41 @@
                 </nav>
             </div>
             <div class="main">
-                <div class="planning"></div>
+                <div class="planning-header">
+                    <h2>📅 Planning des Sorties Manga</h2>
+                    <div class="planning-controls">
+                        <button class="view-toggle active" data-view="week">Semaine</button>
+                        <button class="view-toggle" data-view="month">Mois</button>
+                        <div class="date-nav">
+                            <button class="date-nav-btn" id="prevBtn">‹</button>
+                            <span class="current-date" id="currentDate">Juillet 2025</span>
+                            <button class="date-nav-btn" id="nextBtn">›</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="planning-calendar">
+                    <div class="calendar-header">
+                        <div class="day-header">Lundi</div>
+                        <div class="day-header">Mardi</div>
+                        <div class="day-header">Mercredi</div>
+                        <div class="day-header">Jeudi</div>
+                        <div class="day-header">Vendredi</div>
+                        <div class="day-header">Samedi</div>
+                        <div class="day-header">Dimanche</div>
+                    </div>
+                    
+                    <div class="calendar-grid" id="calendarGrid">
+                        <!-- Le calendrier sera généré par JavaScript -->
+                    </div>
+                </div>
+                
+                <div class="upcoming-releases">
+                    <h3>🔥 Prochaines Sorties</h3>
+                    <div class="releases-list" id="releasesList">
+                        <!-- Les sorties seront générées par JavaScript -->
+                    </div>
+                </div>
             </div>
             <div class="footer">
                 <p>&copy; 2025 SaumonDeLuxe<br> All rights reserved.</p>

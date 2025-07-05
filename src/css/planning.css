@@ -1,233 +1,467 @@
 /* ===== PLANNING PAGE STYLES ===== */
 
-/* Planning day sections */
-.planning-day {
-    background-color: var(--bg-secondary);
-    border-radius: var(--border-radius);
-    padding: 1.5rem;
+/* Planning Header */
+.planning-header {
+    background: linear-gradient(145deg, #1a1a1a, #2a2a2a);
+    border-radius: 20px;
+    padding: 2rem;
     margin-bottom: 2rem;
-    border: 1px solid var(--border-color);
-    animation: fadeIn 0.3s ease-out;
+    border: 2px solid rgba(255, 107, 53, 0.2);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
 }
 
-.planning-day h2 {
-    color: var(--accent-primary);
+.planning-header h2 {
+    color: #ffffff;
+    font-size: 2rem;
+    font-weight: 700;
     margin-bottom: 1.5rem;
-    font-size: 1.4rem;
     text-align: center;
-    padding-bottom: 0.5rem;
-    border-bottom: 2px solid var(--border-color);
-    position: relative;
+    background: linear-gradient(45deg, #ff6b35, #f7931e);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 0 0 30px rgba(255, 107, 53, 0.5);
 }
 
-.planning-day h2::after {
-    content: '';
-    position: absolute;
-    bottom: -2px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 50px;
-    height: 2px;
-    background-color: var(--accent-primary);
-}
-
-/* Planning items */
-.planning-item {
+.planning-controls {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 1.5rem;
-    background-color: var(--bg-tertiary);
-    border-radius: var(--border-radius);
-    padding: 1rem;
-    margin-bottom: 1rem;
-    border: 1px solid var(--border-color);
-    transition: var(--transition);
-    position: relative;
-    overflow: hidden;
+    flex-wrap: wrap;
+    gap: 1rem;
 }
 
-.planning-item::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 4px;
-    background-color: var(--accent-primary);
-    transform: scaleY(0);
-    transition: var(--transition);
-}
-
-.planning-item:hover {
-    background-color: var(--bg-hover);
-    border-color: var(--accent-primary);
-    transform: translateX(5px);
-}
-
-.planning-item:hover::before {
-    transform: scaleY(1);
-}
-
-.planning-item .manga-button {
-    flex-shrink: 0;
-    border-radius: var(--border-radius-small);
-    overflow: hidden;
-    box-shadow: var(--shadow-small);
-    transition: var(--transition);
-}
-
-.planning-item .manga-button:hover {
-    box-shadow: var(--shadow-medium);
-    transform: scale(1.05);
-}
-
-.planning-item .manga-cover {
-    width: 60px;
-    height: 80px;
-    border-radius: var(--border-radius-small);
-}
-
-.planning-info {
-    flex: 1;
-}
-
-.planning-info h3 {
-    color: var(--text-primary);
-    margin-bottom: 0.5rem;
-    font-size: 1.1rem;
+/* View Toggle Buttons */
+.view-toggle {
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 25px;
+    color: #cccccc;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
     font-weight: 600;
-}
-
-.planning-info p {
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-    margin-bottom: 0.25rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.planning-info p strong {
-    color: var(--text-primary);
-    font-weight: 600;
-    min-width: 80px;
-}
-
-/* Status indicators */
-.status-indicator {
-    display: inline-block;
-    padding: 0.2rem 0.5rem;
-    border-radius: var(--border-radius-small);
-    font-size: 0.8rem;
-    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
-.status-active {
-    background-color: var(--success);
-    color: white;
+.view-toggle:hover {
+    background: rgba(255, 107, 53, 0.2);
+    border-color: rgba(255, 107, 53, 0.5);
+    color: #ff6b35;
+    transform: translateY(-2px);
 }
 
-.status-pending {
-    background-color: var(--warning);
-    color: white;
+.view-toggle.active {
+    background: linear-gradient(145deg, #ff6b35, #f7931e);
+    border-color: #ff6b35;
+    color: #ffffff;
+    box-shadow: 0 5px 20px rgba(255, 107, 53, 0.4);
 }
 
-.status-completed {
-    background-color: var(--accent-primary);
-    color: white;
-}
-
-/* Day filter (if needed later) */
-.day-filter {
+/* Date Navigation */
+.date-nav {
     display: flex;
+    align-items: center;
     gap: 1rem;
-    margin-bottom: 2rem;
-    flex-wrap: wrap;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 15px;
+    padding: 0.5rem;
+    border: 1px solid rgba(255, 107, 53, 0.3);
+}
+
+.date-nav-btn {
+    background: rgba(255, 107, 53, 0.2);
+    border: 2px solid #ff6b35;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    color: #ff6b35;
+    font-size: 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
     justify-content: center;
 }
 
-.day-filter-button {
-    padding: 0.5rem 1rem;
-    background-color: var(--bg-tertiary);
-    color: var(--text-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    cursor: pointer;
-    transition: var(--transition);
-    font-weight: 500;
+.date-nav-btn:hover {
+    background: rgba(255, 107, 53, 0.4);
+    transform: scale(1.1);
+    box-shadow: 0 0 15px rgba(255, 107, 53, 0.5);
 }
 
-.day-filter-button:hover {
-    background-color: var(--bg-hover);
-    color: var(--text-primary);
-    border-color: var(--accent-primary);
-}
-
-.day-filter-button.active {
-    background-color: var(--accent-primary);
-    color: white;
-    border-color: var(--accent-primary);
-}
-
-/* Empty state */
-.planning-empty {
+.current-date {
+    color: #ffffff;
+    font-size: 1.1rem;
+    font-weight: 600;
+    min-width: 120px;
     text-align: center;
-    padding: 3rem 2rem;
-    color: var(--text-secondary);
-    background-color: var(--bg-secondary);
-    border-radius: var(--border-radius);
-    border: 1px solid var(--border-color);
 }
 
-.planning-empty h3 {
-    color: var(--text-primary);
+/* Calendar Styles */
+.planning-calendar {
+    background: linear-gradient(145deg, #1e1e1e, #2a2a2a);
+    border-radius: 20px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    border: 2px solid rgba(255, 107, 53, 0.2);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+    overflow: hidden;
+}
+
+.calendar-header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
     margin-bottom: 1rem;
-    font-size: 1.2rem;
+    background: rgba(255, 107, 53, 0.1);
+    border-radius: 10px;
+    padding: 0.5rem;
 }
 
-/* Responsive for planning */
+.day-header {
+    background: rgba(255, 107, 53, 0.8);
+    color: #ffffff;
+    text-align: center;
+    padding: 1rem 0.5rem;
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(255, 107, 53, 0.3);
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    padding: 1px;
+}
+
+.calendar-day {
+    background: rgba(20, 20, 20, 0.8);
+    min-height: 120px;
+    padding: 0.75rem;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    position: relative;
+    cursor: pointer;
+}
+
+.calendar-day:hover {
+    background: rgba(255, 107, 53, 0.1);
+    transform: scale(1.02);
+    z-index: 2;
+    box-shadow: 0 5px 20px rgba(255, 107, 53, 0.3);
+}
+
+.calendar-day.other-month {
+    opacity: 0.3;
+    background: rgba(10, 10, 10, 0.5);
+}
+
+.calendar-day.today {
+    background: linear-gradient(135deg, rgba(255, 107, 53, 0.3), rgba(247, 147, 30, 0.3));
+    border: 2px solid #ff6b35;
+    box-shadow: 0 0 20px rgba(255, 107, 53, 0.5);
+}
+
+.day-number {
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+}
+
+.calendar-day.today .day-number {
+    color: #ff6b35;
+    font-weight: 700;
+}
+
+/* Manga Release Items */
+.release-item {
+    background: rgba(255, 107, 53, 0.1);
+    border: 1px solid rgba(255, 107, 53, 0.3);
+    border-radius: 8px;
+    padding: 0.4rem;
+    margin-bottom: 0.3rem;
+    font-size: 0.8rem;
+    color: #ffffff;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.release-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 3px;
+    background: linear-gradient(180deg, #ff6b35, #f7931e);
+}
+
+.release-item:hover {
+    background: rgba(255, 107, 53, 0.2);
+    border-color: rgba(255, 107, 53, 0.5);
+    transform: translateX(3px);
+}
+
+.release-title {
+    font-weight: 600;
+    color: #ff6b35;
+    display: block;
+    margin-bottom: 0.2rem;
+}
+
+.release-chapter {
+    color: #cccccc;
+    font-size: 0.7rem;
+}
+
+/* Upcoming Releases Section */
+.upcoming-releases {
+    background: linear-gradient(145deg, #1a1a1a, #2a2a2a);
+    border-radius: 20px;
+    padding: 2rem;
+    border: 2px solid rgba(255, 107, 53, 0.2);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+}
+
+.upcoming-releases h3 {
+    color: #ffffff;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    background: linear-gradient(45deg, #ff6b35, #f7931e);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.releases-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
+}
+
+.upcoming-release {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.upcoming-release::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #ff6b35, #f7931e, #ff6b35);
+    background-size: 200% 100%;
+    animation: gradientShift 3s ease-in-out infinite;
+}
+
+.upcoming-release:hover {
+    background: rgba(255, 107, 53, 0.1);
+    border-color: rgba(255, 107, 53, 0.3);
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(255, 107, 53, 0.3);
+}
+
+.release-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.release-cover {
+    width: 60px;
+    height: 80px;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 2px solid rgba(255, 107, 53, 0.3);
+}
+
+.release-details h4 {
+    color: #ffffff;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.release-chapter-info {
+    color: #ff6b35;
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+.release-date {
+    color: #888888;
+    font-size: 0.8rem;
+}
+
+.release-countdown {
+    background: rgba(255, 107, 53, 0.2);
+    border: 1px solid rgba(255, 107, 53, 0.4);
+    border-radius: 20px;
+    padding: 0.5rem 1rem;
+    color: #ff6b35;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-align: center;
+    margin-top: 1rem;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+/* Animations */
+@keyframes gradientShift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* Loading States */
+.calendar-loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 300px;
+    flex-direction: column;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid rgba(255, 107, 53, 0.3);
+    border-top: 4px solid #ff6b35;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+}
+
+.loading-text {
+    color: #ff6b35;
+    font-size: 1.1rem;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
 @media (max-width: 768px) {
-    .planning-item {
+    .planning-header {
+        padding: 1rem;
+    }
+    
+    .planning-controls {
         flex-direction: column;
-        text-align: center;
         gap: 1rem;
     }
     
-    .planning-item .manga-cover {
-        width: 80px;
-        height: 100px;
-    }
-    
-    .planning-info p {
-        justify-content: center;
-    }
-    
-    .planning-day {
+    .planning-calendar {
         padding: 1rem;
+    }
+    
+    .calendar-header {
+        font-size: 0.8rem;
+    }
+    
+    .day-header {
+        padding: 0.75rem 0.25rem;
+    }
+    
+    .calendar-day {
+        min-height: 80px;
+        padding: 0.5rem;
+    }
+    
+    .day-number {
+        font-size: 1rem;
+    }
+    
+    .release-item {
+        font-size: 0.7rem;
+        padding: 0.3rem;
+    }
+    
+    .releases-list {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+    
+    .upcoming-release {
+        padding: 1rem;
+    }
+    
+    .release-info {
+        gap: 0.75rem;
+    }
+    
+    .release-cover {
+        width: 50px;
+        height: 70px;
     }
 }
 
 @media (max-width: 480px) {
-    .planning-item {
-        padding: 0.75rem;
-    }
-    
-    .planning-info h3 {
-        font-size: 1rem;
-    }
-    
-    .planning-info p {
+    .calendar-grid {
         font-size: 0.8rem;
     }
     
-    .day-filter {
-        gap: 0.5rem;
+    .calendar-day {
+        min-height: 60px;
+        padding: 0.25rem;
     }
     
-    .day-filter-button {
-        padding: 0.4rem 0.8rem;
-        font-size: 0.9rem;
+    .release-item {
+        font-size: 0.6rem;
+        padding: 0.2rem;
     }
+    
+    .day-header {
+        font-size: 0.7rem;
+        padding: 0.5rem 0.2rem;
+    }
+}
+
+/* Custom Scrollbar */
+.releases-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.releases-list::-webkit-scrollbar-track {
+    background: #1a1a1a;
+    border-radius: 4px;
+}
+
+.releases-list::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #ff6b35, #f7931e);
+    border-radius: 4px;
+}
+
+.releases-list::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #f7931e, #ff6b35);
 }
