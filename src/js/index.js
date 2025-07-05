@@ -27,21 +27,29 @@ window.onload = async () => {
         return; // Exit early if displaying manga details
     }
 
-    const homepageDiv = document.getElementsByClassName('homepage')[0];
-    const infoDiv = document.getElementsByClassName('info')[0];
+    const homepageDiv = document.querySelector('.homepage');
+    const infoDiv = document.querySelector('.info');
+    
+    // Check if homepage div exists
+    if (!homepageDiv) {
+        console.error('Homepage container not found');
+        return;
+    }
+    
     const mangaList = await tempHomepage();
     if (!mangaList || mangaList.length === 0) {
         homepageDiv.innerHTML = '<p>No mangas found.</p>';
         return;
     }
+    
     mangaList.forEach(manga => {
         const mangaDiv = document.createElement('div');
-        mangaDiv.className = `manga-${encodeURIComponent(manga.title)}`;
+        mangaDiv.className = `manga-item manga-${encodeURIComponent(manga.title)}`;
         mangaDiv.innerHTML = `
             <button class="manga-button" onclick="handleMangaClick('${encodeURIComponent(manga.title)}')">
-            <img src="${manga.image_url}" alt="${manga.title} cover" class="manga-cover">
+                <img src="${manga.image_url}" alt="${manga.title} cover" class="manga-cover">
+                <div class="manga-title">${manga.title}</div>
             </button>
-            <div class="manga-title">${manga.title}</div>
         `;
         homepageDiv.appendChild(mangaDiv);
     });
@@ -58,17 +66,21 @@ function searchMangaHandler() {
     const query = searchInput.value.trim();
     if (query) {
         searchManga(query).then(results => {
-            const homepageDiv = document.getElementsByClassName('homepage')[0];
+            const homepageDiv = document.querySelector('.homepage');
+            if (!homepageDiv) {
+                console.error('Homepage container not found');
+                return;
+            }
             homepageDiv.innerHTML = ''; // Clear previous results
             if (results && results.length > 0) {
                 results.forEach(manga => {
                     const mangaDiv = document.createElement('div');
-                    mangaDiv.className = `manga-${encodeURIComponent(manga.title)}`;
+                    mangaDiv.className = `manga-item manga-${encodeURIComponent(manga.title)}`;
                     mangaDiv.innerHTML = `
                         <button class="manga-button" onclick="handleMangaClick('${encodeURIComponent(manga.title)}')">
-                        <img src="${manga.image_url}" alt="${manga.title} cover" class="manga-cover">
+                            <img src="${manga.image_url}" alt="${manga.title} cover" class="manga-cover">
+                            <div class="manga-title">${manga.title}</div>
                         </button>
-                        <div class="manga-title">${manga.title}</div>
                     `;
                     homepageDiv.appendChild(mangaDiv);
                 });

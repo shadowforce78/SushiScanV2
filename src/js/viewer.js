@@ -5,12 +5,18 @@ async function fetchScansPage(encodedTitle, encoded_scans_type, chapter) {
 }
 
 function displayScans(pages) {
-    const homepageDiv = document.getElementsByClassName('homepage')[0];
-    const infoDiv = document.getElementsByClassName('info')[0];
-    const scansDiv = document.getElementsByClassName('viewer')[0];
+    const homepageDiv = document.querySelector('.homepage');
+    const infoDiv = document.querySelector('.info');
+    const scansDiv = document.querySelector('.viewer');
+    
+    if (!scansDiv) {
+        console.error('Viewer container not found');
+        return;
+    }
+    
     scansDiv.innerHTML = ''; // Clear previous content
-    homepageDiv.style.display = 'none'; // Hide homepage
-    infoDiv.style.display = 'none'; // Hide info section
+    if (homepageDiv) homepageDiv.style.display = 'none'; // Hide homepage
+    if (infoDiv) infoDiv.style.display = 'none'; // Hide info section
     scansDiv.style.display = 'block'; // Show scans viewer
 
     if (!pages || pages.length === 0) {
@@ -24,8 +30,8 @@ function displayScans(pages) {
     backButton.innerText = 'Back to Info';
     backButton.onclick = () => {
         scansDiv.style.display = 'none'; // Hide scans viewer
-        infoDiv.style.display = 'block'; // Show info section
-        homepageDiv.style.display = 'block'; // Show homepage
+        if (infoDiv) infoDiv.style.display = 'block'; // Show info section
+        if (homepageDiv) homepageDiv.style.display = 'block'; // Show homepage
     };
     scansDiv.appendChild(backButton);
     

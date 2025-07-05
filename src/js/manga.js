@@ -1,6 +1,11 @@
 async function fetchMangaDetails(encodedTitle) {
-    const homepageDiv = document.getElementsByClassName('homepage')[0];
-    const infoDiv = document.getElementsByClassName('info')[0];
+    const homepageDiv = document.querySelector('.homepage');
+    const infoDiv = document.querySelector('.info');
+
+    if (!infoDiv) {
+        console.error('Info container not found');
+        return;
+    }
 
     const response = await fetch(`${API_URL}/scans/manga/info?manga_name=${encodedTitle}`)
     const data = await response.json();
@@ -13,9 +18,15 @@ async function fetchMangaDetails(encodedTitle) {
 
 
 function displayMangaDetails(manga) {
-    const homepageDiv = document.getElementsByClassName('homepage')[0];
-    const infoDiv = document.getElementsByClassName('info')[0];
-    homepageDiv.innerHTML = ''; // Clear the homepage content
+    const homepageDiv = document.querySelector('.homepage');
+    const infoDiv = document.querySelector('.info');
+    
+    if (!infoDiv) {
+        console.error('Info container not found');
+        return;
+    }
+    
+    if (homepageDiv) homepageDiv.innerHTML = ''; // Clear the homepage content
     infoDiv.innerHTML = `
             <button class="back-button" onclick="window.location.href='index.html'">Back to Homepage</button>
                 <h2>${manga.title}</h2>
