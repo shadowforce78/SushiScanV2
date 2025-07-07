@@ -8,9 +8,7 @@
     "start": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make",
-    "build": "electron-forge make",
-    "publish": "electron-forge publish",
-    "publish-local": "electron-forge make"
+    "publish": "electron-forge publish"
   },
   "repository": {
     "type": "git",
