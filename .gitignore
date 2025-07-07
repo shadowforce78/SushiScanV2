@@ -1,3 +1,9 @@
 node_modules/
 package-lock.json
 out/
+.dart_tool
+.idea
+android
+ios
+macos
+sushiscan.iml
