@@ -1,4 +1,5 @@
 const API_URL = 'https://api.saumondeluxe.com';
+// const API_URL = "http://127.0.0.1:63246"; // Local development server
 
 async function tempHomepage() {
     const response = await fetch(`${API_URL}/scans/mangaList`);

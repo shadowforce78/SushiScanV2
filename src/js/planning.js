@@ -1,8 +1,5 @@
-/**
- * Planning Module for Manga Release Schedule - Simple Weekly Schedule
- */
-
 const API_URL = 'https://api.saumondeluxe.com';
+// const API_URL = "http://127.0.0.1:63246"; // Local development server
 
 class PlanningManager {
     constructor() {

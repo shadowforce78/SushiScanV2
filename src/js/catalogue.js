@@ -1,4 +1,5 @@
 const API_BASE = "https://api.saumondeluxe.com";
+// const API_BASE = "http://127.0.0.1:63246"; // Local development server
 
 async function fetchCatalogue() {
     const mangaCount = await fetch(`${API_BASE}/scans/manga/count`);
