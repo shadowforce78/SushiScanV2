@@ -1,6 +1,6 @@
 {
   "name": "sushiscan",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Une application pour lire ses mangas partout et gratuitement",
   "main": "main.js",
   "scripts": {
