@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public class ApiService {
-    private static final String API_URL = "http://127.0.0.1:63246"; // Local development server
+    private static final String API_URL = "https://4c3dc2f91a80.ngrok-free.app"; // Local development server
     private static ApiService instance;
 
     private ApiService() {
