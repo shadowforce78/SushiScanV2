@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Couleurs originales -->
     <color name="purple_200">#FFBB86FC</color>
     <color name="purple_500">#FF6200EE</color>
     <color name="purple_700">#FF3700B3</color>
@@ -7,4 +8,28 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- Couleurs pour le thème sushi/manga -->
+    <color name="sushi_orange">#FFE85A4F</color>
+    <color name="sushi_orange_dark">#FFD83C25</color>
+    <color name="sushi_salmon">#FFF4A261</color>
+    <color name="sushi_dark_red">#FF8B0000</color>
+    <color name="sushi_cream">#FFF1FAEE</color>
+    <color name="sushi_dark_blue">#FF1D3557</color>
+
+    <!-- Couleurs pour le mode sombre -->
+    <color name="dark_background">#FF121212</color>
+    <color name="dark_surface">#FF1E1E1E</color>
+    <color name="dark_card">#FF2D2D2D</color>
+    <color name="dark_text_primary">#FFFFFFFF</color>
+    <color name="dark_text_secondary">#FFB3B3B3</color>
+    <color name="dark_accent">#FFE85A4F</color>
+
+    <!-- Couleurs pour le mode clair -->
+    <color name="light_background">#FFFFFFFF</color>
+    <color name="light_surface">#FFF5F5F5</color>
+    <color name="light_card">#FFFFFFFF</color>
+    <color name="light_text_primary">#FF000000</color>
+    <color name="light_text_secondary">#FF666666</color>
+    <color name="light_accent">#FFD83C25</color>
 </resources>

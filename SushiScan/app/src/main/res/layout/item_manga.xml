@@ -22,7 +22,7 @@
             android:layout_width="80dp"
             android:layout_height="120dp"
             android:scaleType="centerCrop"
-            android:background="@android:color/darker_gray"
+            android:background="?attr/colorSurface"
             android:contentDescription="Manga Cover" />
 
         <!-- Manga Info -->
@@ -42,7 +42,7 @@
                 android:text="Manga Title"
                 android:textSize="16sp"
                 android:textStyle="bold"
-                android:textColor="@color/black"
+                android:textColor="?android:attr/textColorPrimary"
                 android:maxLines="2"
                 android:ellipsize="end" />
 
@@ -53,7 +53,7 @@
                 android:layout_height="wrap_content"
                 android:text="Tap to read"
                 android:textSize="12sp"
-                android:textColor="@android:color/darker_gray"
+                android:textColor="?android:attr/textColorSecondary"
                 android:layout_marginTop="4dp" />
 
         </LinearLayout>
