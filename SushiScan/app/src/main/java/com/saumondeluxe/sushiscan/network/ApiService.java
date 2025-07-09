@@ -1,6 +1,7 @@
 package com.saumondeluxe.sushiscan.network;
 
 import com.saumondeluxe.sushiscan.model.Manga;
+import com.saumondeluxe.sushiscan.model.ScanChapter;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -66,6 +67,30 @@ public class ApiService {
         });
     }
 
+    public CompletableFuture<Manga> getMangaDetailsWithInfo(String encodedTitle) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                String response = makeHttpRequest(API_URL + "/scans/manga/info?manga_name=" + encodedTitle);
+                return parseMangaDetailsWithInfoResponse(response);
+            } catch (Exception e) {
+                e.printStackTrace();
+                return null;
+            }
+        });
+    }
+
+    public CompletableFuture<List<String>> getScansPage(String encodedTitle, String encodedScanType, int chapterNumber) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                String response = makeHttpRequest(API_URL + "/scans/manga/" + encodedTitle + "/" + encodedScanType + "/" + chapterNumber);
+                return parseScansPageResponse(response);
+            } catch (Exception e) {
+                e.printStackTrace();
+                return new ArrayList<>();
+            }
+        });
+    }
+
     private String makeHttpRequest(String urlString) throws IOException {
         URL url = new URL(urlString);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -123,5 +148,49 @@ public class ApiService {
         manga.setTitle(jsonObject.getString("title"));
         manga.setImageUrl(jsonObject.optString("image_url", ""));
         return manga;
+    }
+
+    private Manga parseMangaDetailsWithInfoResponse(String response) throws JSONException {
+        JSONObject jsonObject = new JSONObject(response);
+        if (!jsonObject.has("manga")) {
+            return null;
+        }
+
+        JSONObject mangaJson = jsonObject.getJSONObject("manga");
+        Manga manga = new Manga();
+        manga.setTitle(mangaJson.getString("title"));
+        manga.setImageUrl(mangaJson.optString("image_url", ""));
+
+        // Parser les scan_chapters
+        if (mangaJson.has("scan_chapters")) {
+            JSONArray scanChaptersArray = mangaJson.getJSONArray("scan_chapters");
+            List<ScanChapter> scanChapters = new ArrayList<>();
+
+            for (int i = 0; i < scanChaptersArray.length(); i++) {
+                JSONObject scanJson = scanChaptersArray.getJSONObject(i);
+                ScanChapter scanChapter = new ScanChapter();
+                scanChapter.setName(scanJson.getString("name"));
+                scanChapter.setTotalChapters(scanJson.getInt("total_chapters"));
+                scanChapters.add(scanChapter);
+            }
+
+            manga.setScanChapters(scanChapters);
+        }
+
+        return manga;
+    }
+
+    private List<String> parseScansPageResponse(String response) throws JSONException {
+        List<String> pages = new ArrayList<>();
+        JSONObject jsonObject = new JSONObject(response);
+
+        if (jsonObject.has("pages")) {
+            JSONArray pagesArray = jsonObject.getJSONArray("pages");
+            for (int i = 0; i < pagesArray.length(); i++) {
+                pages.add(pagesArray.getString(i));
+            }
+        }
+
+        return pages;
     }
 }

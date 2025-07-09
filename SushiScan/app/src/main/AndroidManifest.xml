@@ -28,6 +28,21 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Nouvelle activité pour les détails du manga -->
+        <activity
+            android:name=".MangaDetailsActivity"
+            android:exported="false"
+            android:parentActivityName=".MainActivity"
+            android:theme="@style/Theme.SushiScan.NoActionBar" />
+
+        <!-- Nouvelle activité pour la lecture des scans -->
+        <activity
+            android:name=".ScanReaderActivity"
+            android:exported="false"
+            android:parentActivityName=".MangaDetailsActivity"
+            android:theme="@style/Theme.SushiScan.NoActionBar"
+            android:screenOrientation="portrait" />
     </application>
 
 </manifest>

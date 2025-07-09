@@ -1,5 +1,6 @@
 package com.saumondeluxe.sushiscan.ui;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,6 +15,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import com.saumondeluxe.sushiscan.MangaDetailsActivity;
 import com.saumondeluxe.sushiscan.R;
 import com.saumondeluxe.sushiscan.model.Manga;
 import com.saumondeluxe.sushiscan.network.ApiService;
@@ -135,10 +137,9 @@ public class HomepageFragment extends Fragment implements MangaAdapter.OnMangaCl
 
     @Override
     public void onMangaClick(Manga manga) {
-        // TODO: Handle manga click - navigate to manga details
-        // Similar to handleMangaClick in your JavaScript code
-        if (getContext() != null) {
-            Toast.makeText(getContext(), "Clicked: " + manga.getTitle(), Toast.LENGTH_SHORT).show();
-        }
+        // Navigation vers MangaDetailsActivity avec l'encodedTitle
+        Intent intent = new Intent(getActivity(), MangaDetailsActivity.class);
+        intent.putExtra("encoded_title", manga.getEncodedTitle());
+        startActivity(intent);
     }
 }

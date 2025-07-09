@@ -1,9 +1,12 @@
 package com.saumondeluxe.sushiscan.model;
 
+import java.util.List;
+
 public class Manga {
     private String title;
     private String imageUrl;
     private String encodedTitle;
+    private List<ScanChapter> scanChapters;
 
     public Manga() {
         // Default constructor required for some serialization libraries
@@ -41,5 +44,13 @@ public class Manga {
 
     public void setEncodedTitle(String encodedTitle) {
         this.encodedTitle = encodedTitle;
+    }
+
+    public List<ScanChapter> getScanChapters() {
+        return scanChapters;
+    }
+
+    public void setScanChapters(List<ScanChapter> scanChapters) {
+        this.scanChapters = scanChapters;
     }
 }
