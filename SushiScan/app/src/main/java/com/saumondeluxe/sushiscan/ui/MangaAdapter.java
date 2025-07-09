@@ -7,6 +7,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.saumondeluxe.sushiscan.R;
 import com.saumondeluxe.sushiscan.model.Manga;
 import java.util.ArrayList;
@@ -83,9 +85,19 @@ public class MangaAdapter extends RecyclerView.Adapter<MangaAdapter.MangaViewHol
             mangaTitle.setText(manga.getTitle());
             mangaInfo.setText("Tap to read");
 
-            // TODO: Load image using Glide or Picasso
-            // For now, use a placeholder
-            mangaCover.setImageResource(R.drawable.ic_launcher_foreground);
+            // Charger l'image avec Glide
+            String imageUrl = manga.getImageUrl();
+            if (imageUrl != null && !imageUrl.isEmpty()) {
+                Glide.with(itemView.getContext())
+                        .load(imageUrl)
+                        .placeholder(R.drawable.ic_launcher_foreground)
+                        .error(R.drawable.ic_launcher_foreground)
+                        .diskCacheStrategy(DiskCacheStrategy.ALL)
+                        .into(mangaCover);
+            } else {
+                // Utiliser l'image placeholder si pas d'URL
+                mangaCover.setImageResource(R.drawable.ic_launcher_foreground);
+            }
         }
     }
 }
