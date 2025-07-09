@@ -1,28 +1,28 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme for dark mode. -->
-    <style name="Theme.SushiScan" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
+    <style name="Theme.SushiScan" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <!-- Primary brand color. -->
-        <item name="colorPrimary">@color/sushi_orange</item>
-        <item name="colorPrimaryVariant">@color/sushi_orange_dark</item>
+        <item name="colorPrimary">@color/accent_orange</item>
+        <item name="colorPrimaryVariant">@color/accent_orange_hover</item>
         <item name="colorOnPrimary">@color/white</item>
         <!-- Secondary brand color. -->
-        <item name="colorSecondary">@color/sushi_salmon</item>
-        <item name="colorSecondaryVariant">@color/sushi_dark_red</item>
+        <item name="colorSecondary">@color/accent_orange</item>
+        <item name="colorSecondaryVariant">@color/accent_orange_hover</item>
         <item name="colorOnSecondary">@color/black</item>
         <!-- Background colors optimized for dark mode -->
-        <item name="android:colorBackground">@color/dark_background</item>
-        <item name="colorSurface">@color/dark_surface</item>
-        <item name="colorOnSurface">@color/dark_text_primary</item>
+        <item name="android:colorBackground">@color/primary_background</item>
+        <item name="colorSurface">@color/secondary_background</item>
+        <item name="colorOnSurface">@color/text_primary</item>
         <!-- Status bar color. -->
-        <item name="android:statusBarColor">@color/dark_background</item>
+        <item name="android:statusBarColor">@color/primary_background</item>
         <!-- Navigation bar -->
-        <item name="android:navigationBarColor">@color/dark_background</item>
+        <item name="android:navigationBarColor">@color/primary_background</item>
         <!-- Text colors for dark mode -->
-        <item name="android:textColorPrimary">@color/dark_text_primary</item>
-        <item name="android:textColorSecondary">@color/dark_text_secondary</item>
+        <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
         <!-- Card background -->
-        <item name="cardBackgroundColor">@color/dark_card</item>
+        <item name="cardBackgroundColor">@color/tertiary_background</item>
         <!-- Window background -->
-        <item name="android:windowBackground">@color/dark_background</item>
+        <item name="android:windowBackground">@color/primary_background</item>
     </style>
 </resources>

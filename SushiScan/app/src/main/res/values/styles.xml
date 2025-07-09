@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Style de base pour les cartes manga -->
+    <style name="MangaCardStyle">
+        <item name="android:layout_margin">8dp</item>
+        <item name="cardCornerRadius">12dp</item>
+        <item name="cardElevation">4dp</item>
+        <item name="android:background">@color/secondary_background</item>
+        <item name="cardBackgroundColor">@color/secondary_background</item>
+        <item name="strokeColor">@color/border_primary</item>
+        <item name="strokeWidth">1dp</item>
+    </style>
+
+    <!-- Style pour les titres de manga -->
+    <style name="MangaTitleStyle">
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:maxLines">2</item>
+        <item name="android:ellipsize">end</item>
+    </style>
+
+    <!-- Style pour les infos secondaires de manga -->
+    <style name="MangaInfoStyle">
+        <item name="android:textColor">@color/text_secondary</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:layout_marginTop">4dp</item>
+    </style>
+
+    <!-- Style pour les boutons principaux (orange) -->
+    <style name="PrimaryButtonStyle" parent="Widget.MaterialComponents.Button">
+        <item name="android:backgroundTint">@color/accent_orange</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="cornerRadius">8dp</item>
+        <item name="android:elevation">4dp</item>
+        <item name="android:stateListAnimator">@null</item>
+        <item name="rippleColor">@color/accent_orange_hover</item>
+    </style>
+
+    <!-- Style pour les boutons secondaires (gris foncé) -->
+    <style name="SecondaryButtonStyle" parent="Widget.MaterialComponents.Button.OutlinedButton">
+        <item name="android:backgroundTint">@color/tertiary_background</item>
+        <item name="android:textColor">@color/text_secondary</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="strokeColor">@color/border_primary</item>
+        <item name="strokeWidth">1dp</item>
+        <item name="cornerRadius">8dp</item>
+        <item name="rippleColor">@color/hover_background</item>
+    </style>
+
+    <!-- Style pour les boutons de filtre alphabétique -->
+    <style name="FilterButtonStyle" parent="Widget.MaterialComponents.Button.OutlinedButton">
+        <item name="android:backgroundTint">@color/tertiary_background</item>
+        <item name="android:textColor">@color/text_secondary</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textSize">14sp</item>
+        <item name="strokeColor">@color/border_primary</item>
+        <item name="strokeWidth">1dp</item>
+        <item name="cornerRadius">4dp</item>
+        <item name="android:layout_margin">2dp</item>
+        <item name="android:minWidth">40dp</item>
+        <item name="android:minHeight">40dp</item>
+        <item name="rippleColor">@color/accent_orange_light</item>
+    </style>
+
+    <!-- Style pour les boutons de filtre actifs -->
+    <style name="FilterButtonActiveStyle" parent="FilterButtonStyle">
+        <item name="android:backgroundTint">@color/accent_orange</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="strokeColor">@color/accent_orange</item>
+    </style>
+
+    <!-- Style pour les sections de planning -->
+    <style name="PlanningDayCardStyle">
+        <item name="android:background">@color/secondary_background</item>
+        <item name="android:layout_margin">8dp</item>
+        <item name="android:padding">12dp</item>
+        <item name="cardCornerRadius">12dp</item>
+        <item name="cardElevation">2dp</item>
+        <item name="strokeColor">@color/border_primary</item>
+        <item name="strokeWidth">1dp</item>
+    </style>
+
+    <!-- Style pour les titres de jour du planning -->
+    <style name="PlanningDayTitleStyle">
+        <item name="android:textColor">@color/accent_orange</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:layout_marginBottom">8dp</item>
+    </style>
+
+    <!-- Style pour les cartes de release du planning -->
+    <style name="PlanningReleaseCardStyle">
+        <item name="android:background">@color/tertiary_background</item>
+        <item name="android:layout_margin">4dp</item>
+        <item name="android:padding">8dp</item>
+        <item name="cardCornerRadius">8dp</item>
+        <item name="cardElevation">2dp</item>
+        <item name="strokeColor">@color/border_secondary</item>
+        <item name="strokeWidth">1dp</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:foreground">?android:attr/selectableItemBackground</item>
+    </style>
+
+    <!-- Style pour les champs de recherche -->
+    <style name="SearchFieldStyle" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+        <item name="android:textColorHint">@color/text_secondary</item>
+        <item name="boxStrokeColor">@color/search_box_stroke_colors</item>
+        <item name="hintTextColor">@color/text_secondary</item>
+        <item name="android:background">@color/secondary_background</item>
+        <item name="boxCornerRadiusTopStart">8dp</item>
+        <item name="boxCornerRadiusTopEnd">8dp</item>
+        <item name="boxCornerRadiusBottomStart">8dp</item>
+        <item name="boxCornerRadiusBottomEnd">8dp</item>
+    </style>
+
+    <!-- Style pour les badges de statut -->
+    <style name="StatusBadgeActive">
+        <item name="android:background">@color/status_active</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:padding">6dp</item>
+        <item name="android:layout_margin">2dp</item>
+    </style>
+
+    <style name="StatusBadgePending">
+        <item name="android:background">@color/status_pending</item>
+        <item name="android:textColor">@color/black</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:padding">6dp</item>
+        <item name="android:layout_margin">2dp</item>
+    </style>
+
+    <style name="StatusBadgeDelayed">
+        <item name="android:background">@color/status_delayed</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:padding">6dp</item>
+        <item name="android:layout_margin">2dp</item>
+    </style>
+
+    <!-- Style pour les sections principales -->
+    <style name="MainSectionStyle">
+        <item name="android:background">@color/secondary_background</item>
+        <item name="android:layout_margin">8dp</item>
+        <item name="android:padding">16dp</item>
+        <item name="cardCornerRadius">12dp</item>
+        <item name="cardElevation">3dp</item>
+    </style>
+
+    <!-- Style pour les titres de section -->
+    <style name="SectionTitleStyle">
+        <item name="android:textColor">@color/accent_orange</item>
+        <item name="android:textSize">20sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:layout_marginBottom">16dp</item>
+    </style>
+
+    <!-- Style pour les dividers -->
+    <style name="DividerStyle">
+        <item name="android:background">@color/border_primary</item>
+        <item name="android:layout_height">1dp</item>
+        <item name="android:layout_marginTop">8dp</item>
+        <item name="android:layout_marginBottom">8dp</item>
+    </style>
+
+</resources>

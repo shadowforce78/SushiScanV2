@@ -17,13 +17,31 @@
     <color name="sushi_cream">#FFF1FAEE</color>
     <color name="sushi_dark_blue">#FF1D3557</color>
 
-    <!-- Couleurs pour le mode sombre -->
-    <color name="dark_background">#FF121212</color>
-    <color name="dark_surface">#FF1E1E1E</color>
-    <color name="dark_card">#FF2D2D2D</color>
-    <color name="dark_text_primary">#FFFFFFFF</color>
-    <color name="dark_text_secondary">#FFB3B3B3</color>
-    <color name="dark_accent">#FFE85A4F</color>
+    <!-- Palette thème sombre principal -->
+    <color name="primary_background">#FF0d1117</color>
+    <color name="secondary_background">#FF161b22</color>
+    <color name="tertiary_background">#FF21262d</color>
+    <color name="hover_background">#FF30363d</color>
+    <color name="active_background">#FF373e47</color>
+
+    <!-- Couleurs de texte -->
+    <color name="text_primary">#FFf0f6fc</color>
+    <color name="text_secondary">#FF7d8590</color>
+    <color name="text_muted">#FF484f58</color>
+
+    <!-- Couleurs d'accent orange -->
+    <color name="accent_orange">#FFfd7e14</color>
+    <color name="accent_orange_hover">#FFe8590c</color>
+    <color name="accent_orange_light">#33fd7e14</color>
+
+    <!-- Couleurs de bordure -->
+    <color name="border_primary">#FF30363d</color>
+    <color name="border_secondary">#FF21262d</color>
+
+    <!-- Couleurs pour les statuts -->
+    <color name="status_active">#FF28a745</color>
+    <color name="status_pending">#FFffc107</color>
+    <color name="status_delayed">#FFdc3545</color>
 
     <!-- Couleurs pour le mode clair -->
     <color name="light_background">#FFFFFFFF</color>
@@ -32,4 +50,12 @@
     <color name="light_text_primary">#FF000000</color>
     <color name="light_text_secondary">#FF666666</color>
     <color name="light_accent">#FFD83C25</color>
+
+    <!-- Couleurs pour le mode sombre optimisées -->
+    <color name="dark_background">#FF0d1117</color>
+    <color name="dark_surface">#FF161b22</color>
+    <color name="dark_card">#FF21262d</color>
+    <color name="dark_text_primary">#FFf0f6fc</color>
+    <color name="dark_text_secondary">#FF7d8590</color>
+    <color name="dark_accent">#FFfd7e14</color>
 </resources>
