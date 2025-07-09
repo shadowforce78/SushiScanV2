@@ -6,7 +6,7 @@
     android:orientation="vertical"
     android:background="@color/white">
 
-    <!-- Search and Filter Section -->
+    <!-- Filter Section -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -15,117 +15,57 @@
         android:background="@color/white"
         android:elevation="2dp">
 
-        <!-- Search Bar -->
-        <com.google.android.material.card.MaterialCardView
+        <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"
-            app:cardElevation="4dp"
-            app:cardCornerRadius="12dp">
+            android:text="Filtrer par lettre"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="12dp" />
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:padding="12dp"
-                android:gravity="center_vertical">
-
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:src="@android:drawable/ic_menu_search"
-                    android:layout_marginEnd="12dp"
-                    android:contentDescription="Search" />
-
-                <EditText
-                    android:id="@+id/catalogue_search"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:hint="Rechercher dans le catalogue..."
-                    android:background="@android:color/transparent"
-                    android:textSize="16sp" />
-
-            </LinearLayout>
-
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Filter Chips -->
+        <!-- Letter Filter Buttons -->
         <HorizontalScrollView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:scrollbars="none">
 
-            <com.google.android.material.chip.ChipGroup
-                android:id="@+id/filter_chip_group"
+            <LinearLayout
+                android:id="@+id/letterButtonsContainer"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                app:singleSelection="false">
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chip_all"
-                    style="@style/Widget.MaterialComponents.Chip.Filter"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Tous"
-                    android:checked="true" />
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chip_ongoing"
-                    style="@style/Widget.MaterialComponents.Chip.Filter"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="En cours" />
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chip_completed"
-                    style="@style/Widget.MaterialComponents.Chip.Filter"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Terminé" />
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chip_action"
-                    style="@style/Widget.MaterialComponents.Chip.Filter"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Action" />
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chip_romance"
-                    style="@style/Widget.MaterialComponents.Chip.Filter"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Romance" />
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chip_comedy"
-                    style="@style/Widget.MaterialComponents.Chip.Filter"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Comédie" />
-
-            </com.google.android.material.chip.ChipGroup>
+                android:orientation="horizontal" />
 
         </HorizontalScrollView>
 
     </LinearLayout>
 
-    <!-- Manga List -->
+    <!-- Progress Bar -->
+    <ProgressBar
+        android:id="@+id/catalogueProgressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_margin="16dp"
+        android:visibility="gone" />
+
+    <!-- Results Section -->
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/catalogue_recycler_view"
+        android:id="@+id/catalogueRecyclerView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
         android:padding="8dp"
         android:clipToPadding="false" />
 
-    <!-- Loading Indicator -->
-    <ProgressBar
-        android:id="@+id/loading_indicator"
-        android:layout_width="wrap_content"
+    <!-- No Results Message -->
+    <TextView
+        android:id="@+id/noResultsText"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"
+        android:text="Aucun manga trouvé pour ce filtre."
+        android:gravity="center"
+        android:textSize="16sp"
+        android:layout_margin="32dp"
         android:visibility="gone" />
 
 </LinearLayout>

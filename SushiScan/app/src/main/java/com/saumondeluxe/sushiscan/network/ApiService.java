@@ -2,6 +2,7 @@ package com.saumondeluxe.sushiscan.network;
 
 import com.saumondeluxe.sushiscan.model.Manga;
 import com.saumondeluxe.sushiscan.model.ScanChapter;
+import com.saumondeluxe.sushiscan.model.PlanningRelease;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -87,6 +88,43 @@ public class ApiService {
             } catch (Exception e) {
                 e.printStackTrace();
                 return new ArrayList<>();
+            }
+        });
+    }
+
+    public CompletableFuture<Integer> getMangaCount() {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                String response = makeHttpRequest(API_URL + "/scans/manga/count");
+                return parseMangaCountResponse(response);
+            } catch (Exception e) {
+                e.printStackTrace();
+                return 0;
+            }
+        });
+    }
+
+    public CompletableFuture<List<Manga>> getMangaListPaginated(int limit, int skip) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                String response = makeHttpRequest(API_URL + "/scans/mangaList?limit=" + limit + "&skip=" + skip);
+                return parseMangaListResponse(response);
+            } catch (Exception e) {
+                e.printStackTrace();
+                return new ArrayList<>();
+            }
+        });
+    }
+
+    public CompletableFuture<List<PlanningRelease>> getPlanning() {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                String response = makeHttpRequest(API_URL + "/scans/planning");
+                return parsePlanningResponse(response);
+            } catch (Exception e) {
+                e.printStackTrace();
+                // En cas d'erreur API, retourner des données mock comme dans votre JS
+                return generateMockPlanningData();
             }
         });
     }
@@ -192,5 +230,62 @@ public class ApiService {
         }
 
         return pages;
+    }
+
+    private int parseMangaCountResponse(String response) throws JSONException {
+        JSONObject jsonObject = new JSONObject(response);
+        return jsonObject.getInt("count");
+    }
+
+    private List<PlanningRelease> parsePlanningResponse(String response) throws JSONException {
+        List<PlanningRelease> planningList = new ArrayList<>();
+        JSONObject jsonObject = new JSONObject(response);
+
+        if (jsonObject.has("planning")) {
+            JSONArray planningArray = jsonObject.getJSONArray("planning");
+
+            for (int i = 0; i < planningArray.length(); i++) {
+                JSONObject releaseJson = planningArray.getJSONObject(i);
+                PlanningRelease release = new PlanningRelease();
+                release.setName(releaseJson.getString("name"));
+                release.setChapter(releaseJson.optInt("chapter", 0));
+                release.setImage(releaseJson.optString("image", ""));
+                release.setDay(releaseJson.optString("day", "Autres"));
+                release.setStatus(releaseJson.optString("status", "active"));
+                release.setTime(releaseJson.optString("time", ""));
+                release.setLanguage(releaseJson.optString("language", "FR"));
+                planningList.add(release);
+            }
+        }
+
+        return planningList;
+    }
+
+    // Équivalent de votre getMockPlanningData() en JS
+    private List<PlanningRelease> generateMockPlanningData() {
+        List<PlanningRelease> mockData = new ArrayList<>();
+
+        String[] mangaNames = {
+            "One Piece", "Naruto", "Demon Slayer", "Attack on Titan",
+            "My Hero Academia", "Dragon Ball Super", "Jujutsu Kaisen",
+            "Chainsaw Man", "Tokyo Ghoul", "Death Note"
+        };
+
+        String[] days = {"Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche", "Autres"};
+
+        // Créer des données de test pour chaque jour
+        for (int i = 0; i < mangaNames.length; i++) {
+            PlanningRelease release = new PlanningRelease();
+            release.setName(mangaNames[i]);
+            release.setChapter((int)(Math.random() * 50) + 100);
+            release.setImage("/img/no-cover.png");
+            release.setDay(days[i % days.length]);
+            release.setStatus("active");
+            release.setTime(((int)(Math.random() * 12) + 8) + ":00");
+            release.setLanguage("FR");
+            mockData.add(release);
+        }
+
+        return mockData;
     }
 }
