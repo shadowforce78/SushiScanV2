@@ -2,7 +2,6 @@ package com.saumondeluxe.sushiscan;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.viewpager2.widget.ViewPager2;
@@ -32,7 +31,7 @@ public class ScanReaderActivity extends AppCompatActivity {
 
         getIntentData();
         setupViews();
-        loadScanPages();
+        fetchAndDisplayScans();
     }
 
     private void getIntentData() {
@@ -48,10 +47,10 @@ public class ScanReaderActivity extends AppCompatActivity {
     }
 
     private void setupViews() {
-        // Configuration du bouton retour
+        // Configuration du bouton retour (équivalent de votre backButton en JS)
         binding.backButton.setOnClickListener(v -> finish());
 
-        // Configuration du ViewPager2
+        // Configuration du ViewPager2 pour afficher les pages comme dans votre displayScans()
         binding.scanPagesViewPager.setAdapter(scanPagesAdapter);
 
         // Configuration de l'indicateur de page
@@ -68,22 +67,16 @@ public class ScanReaderActivity extends AppCompatActivity {
                                                   mangaTitle, scanName, chapterNumber));
     }
 
-    private void loadScanPages() {
+    // Équivalent de votre fetchScansPage() + displayScans() en JS
+    private void fetchAndDisplayScans() {
         try {
             String encodedTitle = java.net.URLEncoder.encode(mangaTitle, java.nio.charset.StandardCharsets.UTF_8);
             String encodedScanType = java.net.URLEncoder.encode(scanName, java.nio.charset.StandardCharsets.UTF_8);
 
+            // Utiliser la même logique que votre fetchScansPage() en JS
             apiService.getScansPage(encodedTitle, encodedScanType, chapterNumber)
                     .thenAccept(pages -> {
-                        runOnUiThread(() -> {
-                            if (pages != null && !pages.isEmpty()) {
-                                scanPagesAdapter.setPageUrls(pages);
-                                updatePageIndicator(1, pages.size());
-                            } else {
-                                Toast.makeText(this, "Aucune page trouvée pour ce chapitre", Toast.LENGTH_SHORT).show();
-                                finish();
-                            }
-                        });
+                        runOnUiThread(() -> displayScans(pages));
                     })
                     .exceptionally(throwable -> {
                         runOnUiThread(() -> {
@@ -97,6 +90,22 @@ public class ScanReaderActivity extends AppCompatActivity {
             Toast.makeText(this, "Erreur d'encodage: " + e.getMessage(), Toast.LENGTH_SHORT).show();
             finish();
         }
+    }
+
+    // Équivalent de votre displayScans() en JS
+    private void displayScans(List<String> pages) {
+        // Vérifier si les pages existent (équivalent de votre vérification en JS)
+        if (pages == null || pages.isEmpty()) {
+            Toast.makeText(this, "Aucune page trouvée pour ce chapitre", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
+        // Afficher les pages dans le ViewPager2 (équivalent de votre forEach qui ajoute des img)
+        scanPagesAdapter.setPageUrls(pages);
+        updatePageIndicator(1, pages.size());
+
+        Toast.makeText(this, "Chargement de " + pages.size() + " pages", Toast.LENGTH_SHORT).show();
     }
 
     private void updatePageIndicator(int currentPage, int totalPages) {

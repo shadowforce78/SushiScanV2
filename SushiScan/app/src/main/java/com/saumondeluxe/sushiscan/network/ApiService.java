@@ -83,7 +83,8 @@ public class ApiService {
     public CompletableFuture<List<String>> getScansPage(String encodedTitle, String encodedScanType, int chapterNumber) {
         return CompletableFuture.supplyAsync(() -> {
             try {
-                String response = makeHttpRequest(API_URL + "/scans/manga/" + encodedTitle + "/" + encodedScanType + "/" + chapterNumber);
+                // Utiliser la même URL que votre script JS
+                String response = makeHttpRequest(API_URL + "/scans/chapter/pages?manga_name=" + encodedTitle + "&scans_type=" + encodedScanType + "&chapter=" + chapterNumber);
                 return parseScansPageResponse(response);
             } catch (Exception e) {
                 e.printStackTrace();
